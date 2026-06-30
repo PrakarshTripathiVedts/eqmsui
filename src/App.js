@@ -9,9 +9,18 @@ import Model from './components/masters/model';
 import PrivateRoute from './common/privateRoute';
 import Calibration from './components/masters/calibration';
 import ComponentList from './components/inventory/componentlist';
-import ComponentDetails from './components/inventory/componentdetails';
 import UserManager from './components/admin/userManager';
 import AuditStamping from './components/admin/auditStamping';
+import EmployeeComponent from './components/masters/employee';
+import ProjectComponent from './components/masters/project';
+import RoleAccessComponent from './components/masters/roleAccess';
+import ChangePasswordComponent from './components/admin/changePassword';
+import AMCComponent from './components/masters/amc';
+import GatePassEntry from './components/gatepass/gatepassEntry';
+import GatepassReport from './components/gatepass/gatepassReport';
+import GatepassSearch from './components/gatepass/gatepassSearch';
+import GatepassPendingReport from './components/gatepass/gatepassPendingReport';
+import ComponentIssued from './components/inventory/componentIssued';
 
 
 
@@ -28,11 +37,20 @@ function App() {
         <Route path="/equipmentlog" element={<EquipmentLog />} />
         <Route path="/calibration" element={<Calibration />} />
         <Route path="/componentlist" element={<ComponentList />} />
-        <Route path="/componentdetails" element={<ComponentDetails />} />
+        <Route path="/componentissued" element={<ComponentIssued />} />
         <Route path="/make" element={<Make />} />
         <Route path="/model" element={<Model />} />
         <Route path="/usermanager" element={<UserManager />} />
         <Route path="/auditstamping" element={<AuditStamping />} />
+        <Route path="/employee" element={<EmployeeComponent />} />
+        <Route path="/projectmaster" element={<ProjectComponent />} />
+        <Route path="/roleaccess" element={<RoleAccessComponent />} />
+        <Route path="/change-password" element={<ChangePasswordComponent />} />
+        <Route path="/amc" element={<AMCComponent />} />
+        <Route path="/gatepassentry" element={<GatePassEntry />} />
+        <Route path="/gatepassreport" element={<GatepassReport />} />
+        <Route path="/gatepasssearch" element={<GatepassSearch />} />
+        <Route path="/gatepasspendingreport" element={<GatepassPendingReport />} />
         </Route>
       </Routes>
     </div>

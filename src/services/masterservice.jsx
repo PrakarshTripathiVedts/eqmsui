@@ -374,3 +374,177 @@ export const getCalibrationMasterListById = async (equipmentid) => {
 }
 
 
+export const getAmcMasterListById = async (equipmentid) => {
+  try {
+    const response = await axios.get(`${API_URL}api/amc/list/${equipmentid}`, {
+      headers: {
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching AMC by ID:", error);
+    throw error;
+  }
+}
+
+
+export const saveAmcData = async (data) => {
+  try {
+    
+    const response = await axios.post(`${API_URL}api/amc`, data, {
+      headers: {
+         'Content-Type': 'application/json',
+        ...authHeader()
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error saving AMC data:", error);
+    throw error;
+  }
+}
+
+
+export const UpdateAmc = async (id, Data) => {
+  try {
+    const response = await axios.put(`${API_URL}api/amc/${id}`, Data, {
+      headers: {
+         'Content-Type': 'application/json',
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating AMC:", error);
+    throw error;
+  }
+}
+
+export const getAmcById = async (id) => {
+  try {
+    const response = await axios.get(`${API_URL}api/amc/${id}`, {
+      headers: {
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching AMC id:", error);
+    throw error;
+  }
+}
+
+export const getVendorListService = async () => {
+  try {
+    const response = await axios.get(`${API_URL}api/master/vendor`, {
+      headers: authHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor list:", error);
+    throw error;
+  }
+}
+
+export const saveProjectService = async (data) => {
+  try {
+    const response = await axios.post(`${API_URL}api/master/project`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error saving Project data:", error);
+    throw error;
+  }
+}
+
+export const getProjectByIdService = async (id) => {
+  try {
+    const response = await axios.get(`${API_URL}api/master/project/${id}`, {
+      headers: {
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching Project by ID:", error);
+    throw error;
+  }
+}
+
+
+
+export const updateProjectService = async (id, Data) => {
+  try {
+    const response = await axios.put(`${API_URL}api/master/project`, Data, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating Project :", error);
+    throw error;
+  }
+};
+
+
+export const getItemUnitList = async () => {
+  try {
+    const response = await axios.get(`${API_URL}api/master/itemUnit`, {
+      headers: authHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching item Unit list:", error);
+    throw error;
+  }
+}
+
+export const downloadUserManual = async (docType) => {
+  try {
+    const response = await axios.get(`${API_URL}api/master/download-user-manual/${docType}`, {
+      headers: authHeader(),
+      responseType: "blob",
+    });
+
+    const contentDisposition = response.headers["content-disposition"];
+    let fileName = docType;
+
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+?)"?$/);
+      if (match) {
+        fileName = match[1];
+      }
+    }
+
+    return {
+      data: response.data,
+      fileName,
+      contentType: response.headers["content-type"]
+    };
+  } catch (error) {
+    return { data: '0' };
+  }
+};
+
+
+export const resetUserPassword = async (loginId) => {
+  try {
+    const response = await axios.put(`${API_URL}api/master/user-manager/${loginId}/reset-password`, {}, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating Project :", error);
+    throw error;
+  }
+};

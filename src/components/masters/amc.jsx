@@ -2,28 +2,28 @@ import { Link } from "react-router-dom";
 import Datatable from "../datatable/datatable";
 import Navbar from "../navbar/navbar";
 import { useEffect, useState } from "react";
-import { getCalibrationMasterListById, getEquipmentListService } from "../../services/masterservice";
+import { getAmcMasterListById, getEquipmentListService } from "../../services/masterservice";
 import { getFormDetailsList } from "../../services/admin.service"; // Imported for permission checks
 import Select from "react-select";
 import CalibrationAddEditComponent from "./calibrationAddEditComponent";
 import { FaEdit } from "react-icons/fa";
 import { format } from "date-fns";
+import AmcAddEditComponent from "./amcAddEditComponent";
 
 /* ─── match this to your formUrl value in DB for this page ─── */
-const FORM_URL = "calibration";
+const FORM_URL = "amc";
 
-const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
-  const [calibrationList, setCalibrationList] = useState([]);
-  const [calibrationId, setCalibrationId] = useState('');
+const AMCComponent = ({ selectedEquipmentId, selectedEquipmentName }) => {
+  const [amcList, setAmcList] = useState([]);
+  const [amcId, setAmcId] = useState('');
   const [equipmentList, setEquipmentList] = useState([]);
   const [equipmentValue, setEquipmentValue] = useState(selectedEquipmentId || '');
   const [equipmentName, setEquipmentName] = useState(selectedEquipmentName || '');
-  const [hasCalibration, setHasCalibration] = useState(false);
+  const [hasAmc, setHasAmc] = useState(false);
   const [status, setStatus] = useState('');
-  const [latestAgency, setLatestAgency] = useState('');
-  const [latestDueDate, setLatestDueDate] = useState(''); 
+  const [latestDueDate, setLatestDueDate] = useState('');
   const [equipment, setEquipment] = useState({});
-  const [latestCalibrationDate, setLatestCalibrationDate] = useState('');
+  const [latestAmcStartDate, setLatestAmcStartDate] = useState('');
 
   /* ================= PERMISSIONS STATE ================= */
   const [permissions, setPermissions] = useState({
@@ -65,9 +65,9 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
   /* ================= BASE COLUMNS ================= */
   const baseColumns = [
   { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-  { name: "Agency", selector: (row) => row.calibrationAgency, sortable: true, align: 'text-center' },  // ← ADD
-  { name: "Last Calibration Date", selector: (row) => row.calibrationDate, sortable: true, align: 'text-center' },
-  { name: "Calibration Due Date", selector: (row) => row.calibrationDueDate, sortable: true, align: 'text-center' },
+  { name: "Agency", selector: (row) => row.agency, sortable: true, align: 'text-start'},
+  { name: "AMC Start Date", selector: (row) => row.amcDate, sortable: true, align: 'text-center' },
+  { name: "AMC End Date", selector: (row) => row.amcEndDate, sortable: true, align: 'text-center' },
   { name: "Revision", selector: (row) => row.revision, sortable: true, align: 'text-center' },  // ← ADD
 ];
 
@@ -77,12 +77,12 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
     : baseColumns;
 
   /* ================= ACTIONS ================= */
-  const editCalibration = async (id) => {
-    setCalibrationId(id);
+  const editAmc = async (id) => {
+    setAmcId(id);
     setStatus('edit');
   };
 
-  const addCalibration = async () => {
+  const addAmc = async () => {
     setStatus('add');
   };
 
@@ -94,7 +94,7 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
 
   useEffect(() => {
     if (permissions.forView && equipmentValue) {
-      fetchCalibrationMasterListById(equipmentValue);
+      fetchAmcMasterListById(equipmentValue);
     }
   }, [equipmentValue, permissions.forView]);
 
@@ -105,7 +105,7 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
     if (matched) {
       setEquipmentValue(matched.equipmentId);
       setEquipmentName(matched.equipmentName);
-      setEquipment(matched);  // ← full object set here
+      setEquipment(matched);
     }
   }
   }, [equipmentList, selectedEquipmentId, selectedEquipmentName]);
@@ -125,65 +125,64 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
     }
   };
 
-  const equipmentOptions = equipmentList.map(equip => ({
-    value: equip.equipmentId,
-    label: equip.equipmentName,
-    data: equip, // Store the entire equipment object for later use
-  }));
+ const equipmentOptions = equipmentList.map(equip => ({
+  value: equip.equipmentId,
+  label: equip.equipmentName,
+  data: equip,
+}));
 
   const handleEquipChange = (data) => {
-    setEquipmentValue(data?.value);
-    setEquipmentName(data?.label);
-    setEquipment(data?.data); // Set the entire equipment object
-  };
+  setEquipmentValue(data?.value);
+  setEquipmentName(data?.label);
+  setEquipment(data?.data);
+};
 
-  const fetchCalibrationMasterListById = async (equipmentValue) => {
+  const fetchAmcMasterListById = async (equipmentValue) => {
     try {
-      const data = await getCalibrationMasterListById(equipmentValue);
+      const data = await getAmcMasterListById(equipmentValue);
       if (!data) return;
       if (Array.isArray(data) && data.length > 0) {
-        setHasCalibration(true); 
+        setHasAmc(true); 
         setTableData(data);
       } else {
-        setHasCalibration(false); 
+        setHasAmc(false); 
         setTableData([]);
       }
     } catch (err) {
-      console.error("Failed to fetch calibration data:", err);
-      setHasCalibration(false);
+      console.error("Failed to fetch AMC data:", err);
+      setHasAmc(false);
     }
   };
 
-  const setTableData = (data) => {
-    const sortedData = [...data].sort(
-      (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
-    );
-    setLatestAgency(sortedData[0]?.calibrationAgency ?? '');
-    setLatestDueDate(sortedData[0]?.calibrationDueDate ?? '');
-    setLatestCalibrationDate(sortedData[0]?.calibrationDate ?? '');
-    setCalibrationList(
-      sortedData.map((item, index) => ({
-        sn: index + 1 + '.',
-        calibrationAgency: item.calibrationAgency ?? '-',   // ← ADD
-        calibrationDate: item.calibrationDate ? format(new Date(item.calibrationDate), "dd-MM-yyyy") : '-',
-        calibrationDueDate: item.calibrationDueDate ? format(new Date(item.calibrationDueDate), "dd-MM-yyyy") : '-',
-        revision: item.revision ?? 0,   // ← ADD
-        action: permissions.forEdit ? (
-          <>
-            {index === 0 && item.calibrationId && (
-              <button
-                className="btn btn-warning btn-sm"
-                onClick={() => item.calibrationId != null && editCalibration(item.calibrationId)}
-                title="Edit Equipment"
-              >
-                <FaEdit size={16} />
-              </button>
-            )}
-          </>
-        ) : '-',
-      }))
-    );
-  };
+ const setTableData = (data) => {
+  const sortedData = [...data].sort(
+    (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
+  );
+  setLatestDueDate(sortedData[0]?.amcEndDate ?? '');
+  setLatestAmcStartDate(sortedData[0]?.amcStartDate ?? '');  // ← ADD
+  setAmcList(
+    sortedData.map((item, index) => ({
+      sn: index + 1 + '.',
+      agency: item.amcAgency ?? '-',
+      amcDate: item.amcStartDate ? format(new Date(item.amcStartDate), "dd-MM-yyyy") : '-',
+      amcEndDate: item.amcEndDate ? format(new Date(item.amcEndDate), "dd-MM-yyyy") : '-',
+      revision: item.revision ?? 0,
+      action: permissions.forEdit ? (
+        <>
+          {index === 0 && item.amcId && (
+            <button
+              className="btn btn-warning btn-sm"
+              onClick={() => item.amcId != null && editAmc(item.amcId)}
+              title="Edit AMC"
+            >
+              <FaEdit size={16} />
+            </button>
+          )}
+        </>
+      ) : '-',
+    }))
+  );
+};
 
   /* ================= NO VIEW PERMISSION SCREEN ================= */
   if (!permissions.forView) {
@@ -192,7 +191,7 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
         <Navbar />
         <div className="card p-2">
           <div className="card-body text-center">
-            <h3>Calibration</h3>
+            <h3>Annual Maintenance Contract (AMC)</h3>
             <p className="text-danger mt-3">
               You do not have permission to view this page.
             </p>
@@ -205,10 +204,28 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
 
   /* ================= SUB-ROUTING WORKFLOWS ================= */
   switch (status) {
-    case 'add':
-      return <CalibrationAddEditComponent mode={'add'} equipmentValue={equipmentValue} equipmentName={equipmentName} setStatus={setStatus} latestAgency={latestAgency} latestDueDate={latestDueDate} latestCalibrationDate={latestCalibrationDate} hasCalibration={hasCalibration} equipment={equipment} refreshList={() => fetchCalibrationMasterListById(equipmentValue)} />;
-    case 'edit':
-      return <CalibrationAddEditComponent mode={'edit'} calibrationId={calibrationId} equipmentName={equipmentName} setStatus={setStatus} equipment={equipment} refreshList={() => fetchCalibrationMasterListById(equipmentValue)} />;
+  case 'add':
+  return <AmcAddEditComponent 
+    mode={'add'} 
+    equipmentValue={equipmentValue} 
+    equipmentName={equipmentName} 
+    setStatus={setStatus} 
+    latestDueDate={latestDueDate}
+    latestAmcStartDate={latestAmcStartDate}
+    hasAmc={hasAmc} 
+    equipment={equipment}
+    amcHistory={amcList}          // ← ADD THIS
+    refreshList={() => fetchAmcMasterListById(equipmentValue)} 
+  />;
+case 'edit':
+  return <AmcAddEditComponent 
+    mode={'edit'} 
+    amcId={amcId} 
+    equipmentName={equipmentName} 
+    setStatus={setStatus} 
+    equipment={equipment}
+    refreshList={() => fetchAmcMasterListById(equipmentValue)} 
+  />;
     
     default:
       return (
@@ -216,7 +233,7 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
           <Navbar />
           <div className="card p-2">
             <div className="card-body text-center">
-              <h3>Calibration</h3>
+              <h3>Annual Maintenance Contract (AMC)</h3>
 
               <div className="row justify-content-center align-items-center rowHeadercolor">
                 <div className="col-md-12 d-flex justify-content-end align-items-center flex-wrap">
@@ -234,17 +251,17 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
               </div>
 
               <div id="card-body customized-card">
-                <Datatable columns={columns} data={calibrationList} />
+                <Datatable columns={columns} data={amcList} />
               </div>
 
               <div align="center">
-                {permissions.forAdd && !hasCalibration && (
-                  <button className="mt-2 btn add me-2" onClick={() => addCalibration()}>
+                {permissions.forAdd && !hasAmc && (
+                  <button className="mt-2 btn add me-2" onClick={() => addAmc()}>
                     ADD
                   </button>
                 )}
-                {permissions.forAdd && hasCalibration && (
-                  <button className="mt-2 btn add me-2" onClick={() => addCalibration()}>
+                {permissions.forAdd && hasAmc && (
+                  <button className="mt-2 btn add me-2" onClick={() => addAmc()}>
                     REVISE
                   </button>
                 )}
@@ -257,4 +274,4 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
   }
 };
 
-export default Calibration;
+export default AMCComponent;

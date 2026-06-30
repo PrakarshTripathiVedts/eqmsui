@@ -8,10 +8,12 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import withRouter from "../../common/with-router";
 import { login } from "../../services/auth.service";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage = (props) => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const initialValues = { username: "", password: "" };
 
   const validationSchema = Yup.object().shape({
@@ -28,32 +30,28 @@ const LoginPage = (props) => {
   const handleLoginSubmit = async (values) => {
     setMessage("");
     setLoading(true);
-    const { username, password } = values;
-    await login(username, password).then(
-      (response) => {
-        if (!response.data) {
-          setLoading(false);
-          showError("Login failed. Please try again.");
-        } else {
-          props.router.navigate("/dashboard");
-        }
-      },
-      (error) => {
-        let resMessage;
-        if (error.response && error.response.status === 401) {
-          resMessage = "Username or password is incorrect";
-        } else {
-          resMessage =
-            (error.response &&
-              error.response.data &&
-              error.response.data.message) ||
-            error.message ||
-            error.toString();
-        }
-        setLoading(false);
-        showError(resMessage);
+
+    try {
+      const { username, password } = values;
+      const response = await login(username, password);
+      if (response?.token) {
+        navigate("/dashboard");
+      } else {
+        showError("Login failed. Please try again.");
       }
-    );
+    } catch (error) {
+      let resMessage = "Something went wrong. Try again.";
+      if (error.response) {
+        if (error.response.status === 401) {
+          resMessage = "Username or password is incorrect";
+        } else if (error.response.data?.message) {
+          resMessage = error.response.data.message;
+        }
+      }
+      showError(resMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const showError = (msg) => {
@@ -64,25 +62,34 @@ const LoginPage = (props) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="login-wrapper d-flex flex-column">
+    <div className="login-wrapper d-flex flex-column position-relative" style={{ minHeight: '100vh' }}>
       <header className="navbar navbar-expand-lg navbar-dark custom-header-bg px-2 py-2">
-        <div className="d-flex align-items-center mx-auto">
-          <img src={drdologo} alt="Logo" height="70" width="70" className="me-4" />
-          <h4 className="text-white mb-0">Equipment & Project Inventory Monitoring System (EQPIMS Ver1.0)</h4>
+        <div className="d-flex flex-column align-items-center mx-auto">
+          <h4 className="text-white mb-1">
+            Equipment & Project Inventory Monitoring System (EQPIMS Ver1.0)
+          </h4>
+          <h5 className="text-white mb-0">
+            Directorate of Portable Short Range Radar (DPSRR)
+          </h5>
         </div>
       </header>
 
-      <main className="flex-grow-1 d-flex justify-content-center align-items-center p-4"
-      // style={{
-      //   backgroundImage: `url(${bgImage})`,
-      //   backgroundSize: 'cover',
-      //   backgroundPosition: 'center',
-      //   backgroundRepeat: 'no-repeat',
-      // }}
-      >
-        <div className="card card-custom overflow-hidden w-100">
-          <div className="row g-0" style={{ height: '500px' }}>
-            <div className="col-md-6 d-flex align-items-center justify-content-center  p-4">
+      {/* Main Container - Takes full height to keep form dead-center */}
+      <main className="flex-grow-1 d-flex justify-content-center align-items-center p-4 position-relative">
+        
+        {/* DRDO Logo: Absolutely positioned to the top-left of main container */}
+        <div className="position-absolute" style={{ top: '20px', left: '25px', zIndex: 10 }}>
+          <img 
+            src={drdologo} 
+            alt="DRDO Logo" 
+            style={{ width: '90px', height: '90px', objectFit: 'contain' }}
+          />
+        </div>
+
+        {/* Login Form Card */}
+        <div className="card card-custom overflow-hidden w-100" style={{ maxWidth: '1100px' }}>
+          <div className="row g-0" style={{ minHeight: '500px' }}>
+            <div className="col-md-6 d-flex align-items-center justify-content-center p-4">
               <img
                 src={loginimage}
                 alt="loginimage"
@@ -136,13 +143,11 @@ const LoginPage = (props) => {
                     </div>
 
                     <div className="w-75 py-2">
-                      <button type="submit" className="btn bg-primary text-white custom-btn">Login</button>
+                      <button type="submit" className="btn bg-primary text-white custom-btn w-100">Login</button>
                     </div>
                   </Form>
                 )}
-
               </Formik>
-
             </div>
           </div>
         </div>
@@ -152,9 +157,6 @@ const LoginPage = (props) => {
         <small>Website maintained by Vedant Tech Solutions</small>
       </footer>
     </div>
-
-
-
   );
 };
 
