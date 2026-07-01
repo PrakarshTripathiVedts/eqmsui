@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Datatable from "../datatable/datatable";
 import { getEquipmentById, getEquipmentListService } from "../../services/masterservice";
+import { getFormDetailsList } from "../../services/admin.service"; // Imported for permission checks
 import EquipmentAddEditComponent from "./equipmentAddEditComponent";
 import "../datatable/master.css";
 import { FaDownload, FaEdit } from "react-icons/fa";
@@ -8,38 +9,84 @@ import { Link } from "react-router-dom";
 import Navbar from "../navbar/navbar";
 import { printEquipmentDownload } from "../print/equipmentPrint";
 
-const Equipment = () => {
+/* ─── match this to your formUrl value in DB for this page ─── */
+const FORM_URL = "equipment";
 
+const Equipment = () => {
   const [equipmentList, setEquipmentList] = useState([]);
   const [status, setStatus] = useState('');
   const [equipmentId, setEquipmentId] = useState('');
 
-  const columns = [
+  /* ================= PERMISSIONS STATE ================= */
+  const [permissions, setPermissions] = useState({
+    forView:   false,
+    forAdd:    false,
+    forEdit:   false,
+    forDelete: false,
+  });
+
+  /* ================= LOAD PERMISSIONS ================= */
+  useEffect(() => {
+    const roleId = localStorage.getItem("roleId");
+
+    const loadPermissions = async () => {
+      try {
+        const details = await getFormDetailsList(roleId);
+        const detailArray = Array.isArray(details) ? details : details?.data ?? [];
+
+        const match = detailArray.find(
+          (d) => d.formUrl?.toLowerCase() === FORM_URL.toLowerCase()
+        );
+
+        if (match) {
+          setPermissions({
+            forView:   match.forView   === true || match.forView   === 1 || match.forView   === "Y",
+            forAdd:    match.forAdd    === true || match.forAdd    === 1 || match.forAdd    === "Y",
+            forEdit:   match.forEdit   === true || match.forEdit   === 1 || match.forEdit   === "Y",
+            forDelete: match.forDelete === true || match.forDelete === 1 || match.forDelete === "Y",
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load permissions", err);
+      }
+    };
+
+    loadPermissions();
+  }, []);
+
+  /* ================= BASE COLUMNS ================= */
+  const baseColumns = [
     { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-    { name: "Equipment Name", selector: (row) => row.equipmentName, sortable: true, align: 'text-start' },
-    { name: "Item Serial No", selector: (row) => row.itemSerialNumber, sortable: true, align: 'text-center' },
+    { name: "Name of Equipment", selector: (row) => row.equipmentName, sortable: true, align: 'text-start' },
+    { name: "Serial No", selector: (row) => row.itemSerialNumber, sortable: true, align: 'text-center' },
     { name: "Make", selector: (row) => row.make, sortable: true, align: 'text-start' },
     { name: "Model", selector: (row) => row.model, sortable: true, align: 'text-start' },
-    { name: "Item Cost", selector: (row) => row.itemCost, sortable: true, align: 'text-end' },
-    { name: "Location", selector: (row) => row.location, sortable: true, align: 'text-start', },
+    { name: "Project Code", selector: (row) => row.projectCode, sortable: true, align: 'text-center' },
+    { name: "Parent Location", selector: (row) => row.location, sortable: true, align: 'text-start' },
     { name: "SSRNo", selector: (row) => row.ssrNo, sortable: true, align: 'text-start' },
-    { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center', },
   ];
 
+  /* Dynamic columns addition based on Edit permission or download availability */
+  const columns = permissions.forEdit 
+    ? [...baseColumns, { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' }]
+    : baseColumns;
+
+  /* ================= ACTIONS ================= */
   const editEquipment = async (id) => {
     setEquipmentId(id);
     setStatus('edit');
-  }
+  };
 
   const handleEquipmentDownload = async (id) => {
     const data = await getEquipmentById(id);
     await printEquipmentDownload(data);
-  }
+  };
 
   const addEquipment = () => {
     setStatus('add');
-  }
+  };
 
+  /* ================= FETCH DATA ================= */
   const getEquipmentMasterList = async () => {
     try {
       const data = await getEquipmentListService();
@@ -54,9 +101,12 @@ const Equipment = () => {
   };
 
   useEffect(() => {
-    getEquipmentMasterList();
-  }, []);
+    if (permissions.forView) {
+      getEquipmentMasterList();
+    }
+  }, [permissions.forView]);
 
+  /* ================= TABLE DATA BUILDER ================= */
   const setTableData = (data) => {
     setEquipmentList(
       data.map((item, index) => ({
@@ -65,34 +115,62 @@ const Equipment = () => {
         itemSerialNumber: item.itemSerialNumber ?? '-',
         make: item.make ?? '-',
         model: item.model ?? '-',
-
-        itemCost: item.itemCost ?? '-',
-        location: item.location ?? '-',
+        projectCode: item.projectCode ?? '-',
+        location: item.parentLocation ?? '-',
         ssrNo: item.ssrNo ?? '-',
         action: (
           <>
+            {/* Download button remains available to roles who can view */}
             <button
               type="button"
               className="btn btn-sm btn-outline-success me-2"
               onClick={() => handleEquipmentDownload(item.equipmentId)}
+              title="Download Details"
             >
-              &nbsp;
               <FaDownload size={16} />
             </button>
-            <button className="btn btn-warning btn-sm" onClick={() => item.equipmentId != null && editEquipment(item.equipmentId)} title="Edit Equipment">
-              <FaEdit size={16} />
-            </button>
+            
+            {/* Edit button conditionally rendered by permission */}
+            {permissions.forEdit && (
+              <button 
+                className="btn btn-warning btn-sm" 
+                onClick={() => item.equipmentId != null && editEquipment(item.equipmentId)} 
+                title="Edit Equipment"
+              >
+                <FaEdit size={16} />
+              </button>
+            )}
           </>
         ),
       }))
     );
   };
 
+  /* ================= NO VIEW PERMISSION BLOCK ================= */
+  if (!permissions.forView) {
+    return (
+      <div>
+        <Navbar />
+        <div className="card p-2">
+          <div className="card-body text-center">
+            <h3>Equipment List</h3>
+            <p className="text-danger mt-3">
+              You do not have permission to view this page.
+            </p>
+            <Link className="mt-2 btn back" to="/dashboard">BACK</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ================= SUB-ROUTING WORKFLOWS ================= */
   switch (status) {
     case 'add':
-      return <EquipmentAddEditComponent mode={'add'}></EquipmentAddEditComponent>;
+      return <EquipmentAddEditComponent mode={'add'} setStatus={setStatus} refreshList={getEquipmentMasterList} />;
     case 'edit':
-      return <EquipmentAddEditComponent mode={'edit'} equipmentId={equipmentId}></EquipmentAddEditComponent>;
+      return <EquipmentAddEditComponent mode={'edit'} equipmentId={equipmentId} setStatus={setStatus} refreshList={getEquipmentMasterList} />;
+    
     default:
       return (
         <div>
@@ -100,21 +178,25 @@ const Equipment = () => {
           <div className="card p-2">
             <div className="card-body text-center">
               <h3>Equipment List</h3>
+              
               <div id="card-body customized-card">
-                {<Datatable columns={columns} data={equipmentList} />}
+                <Datatable columns={columns} data={equipmentList} />
               </div>
-              <div align="center" >
-                <button className="mt-2 btn add" onClick={() => addEquipment()} >
-                  ADD
-                </button>
+
+              <div align="center">
+                {permissions.forAdd && (
+                  <button className="mt-2 btn add me-2" onClick={() => addEquipment()}>
+                    ADD
+                  </button>
+                )}
                 <Link className="mt-2 btn back" to="/dashboard">BACK</Link>
               </div>
+
             </div>
           </div>
         </div>
-
       );
-  };
-}
+  }
+};
 
 export default Equipment;

@@ -43,7 +43,7 @@ const EquipmentLogAddEditComponent = ({ mode, equpmentLogId, equipmentValue, equ
         startTime: data.startTime ? new Date(data.startTime) : "",
         endTime: data.endTime ? new Date(data.endTime) : "",
         
-        totalHours: data?.totalHours ?? "",
+        totalHours: formatDuration(data?.totalHours) ?? "",
         equipmentId: data?.equipmentId ?? "",
         description: data?.description ?? "",
         usedBy:data?.usedBy ??"",
@@ -98,10 +98,12 @@ const EquipmentLogAddEditComponent = ({ mode, equpmentLogId, equipmentValue, equ
   function AutoCalculateTotalHours({ startTime, endTime, setFieldValue }) {
     useEffect(() => {
       if (startTime && endTime) {
-        const diff = (new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60); // in hours
-        if (!isNaN(diff)) {
-          setFieldValue("totalHours", diff.toFixed(2));
-        }
+        const diff =
+  (new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60);
+
+if (!isNaN(diff)) {
+  setFieldValue("totalHours", formatDuration(diff));
+}
       }
     }, [startTime, endTime, setFieldValue]);
 
@@ -135,15 +137,34 @@ const EquipmentLogAddEditComponent = ({ mode, equpmentLogId, equipmentValue, equ
 
   });
 
+  const convertToDecimalHours = (time) => {
+  if (!time) return 0;
+
+  const [hh, mm] = time.split(":").map(Number);
+
+  return (hh + mm / 60).toFixed(2);
+};
+
   const handleSubmit = async (values) => {
 
     console.log("values",values);
-    
+    const payload = {
+  ...values,
+  startTime: values.startTime
+    ? values.startTime.toISOString()
+    : "",
+
+  endTime: values.endTime
+    ? values.endTime.toISOString()
+    : "",
+
+  totalHours: convertToDecimalHours(values.totalHours),
+};
     try {
       if (mode === "add") {
         const confirmed = await showConfirmation();
         if (confirmed) {
-          const response = await saveEquipmentLogData(values);
+          const response = await saveEquipmentLogData(payload);
           if (response.id != null && response.id > 0) {
             setStatus('list');
             showAlert("Success", "Equipment Log added successfully", "success");
@@ -155,7 +176,7 @@ const EquipmentLogAddEditComponent = ({ mode, equpmentLogId, equipmentValue, equ
       } else {
         const confirmed = await showConfirmation();
         if (confirmed) {
-          const response = await UpdateEquipmentLog(equpmentLogId, values);
+          const response = await UpdateEquipmentLog(equpmentLogId, payload);
           if (response.id != null && response.id > 0) {
             setStatus('list');
             showAlert("Success", "Equipment log updated successfully", "success");
@@ -186,15 +207,29 @@ const EquipmentLogAddEditComponent = ({ mode, equpmentLogId, equipmentValue, equ
 
     const empOptions = employeeList.map(emp => ({
     value: emp.empId,
-    label: emp.empName
+    label: emp.salutation ? emp.salutation + ' ' + emp.empName : emp.empName
   }));
 
+const formatDuration = (hours) => {
+  if (hours == null || hours === "") return "";
 
+  const totalMinutes = Math.round(hours * 60);
+
+  const hh = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+  const mm = String(totalMinutes % 60).padStart(2, "0");
+
+  return `${hh}:${mm}`;
+};
 
 
   switch (status) {
     case 'list':
-      return <EquipmentLog></EquipmentLog>;
+  return (
+    <EquipmentLog
+      selectedEquipmentId={formData.equipmentId}
+      selectedEquipmentName={equipmentName}
+    />
+  );
     default:
       return (
         <div>

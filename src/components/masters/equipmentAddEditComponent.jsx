@@ -28,26 +28,25 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
 
   const [formData, setFormData] = useState({
-
-    calibrationAgency: "",
-    calibrationDate: "",
-    calibrationDueDate: "",
     itemCost: "",
     itemSerialNumber: "",
-    location: "",
+    parentLocation: "",
+    presentLocation: "",
     serviceStatus: "",
     specification: "",
     soNo: "",
     soDate: "",
     model: "",
     make: "",
-    initiateOfficer: "",
+    locationOfficer: "",
     projectId: "",
     equipmentName: "",
     remarks: "",
     ssrNo: "",
-
-
+    warranty:"",
+    procurementName: "",
+    crvNo: "",
+    crvDate: "",
   });
 
 
@@ -55,29 +54,33 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
   const getDataById = async (equipmentId) => {
     try {
       const data = await getEquipmentById(equipmentId);
+      console.log("Fetched equipment data:", data);
       if (!data) return;
 
       setFormData(prev => ({
         ...prev,
         equipmentId: data?.equipmentId ?? "",
         equipmentName: data?.equipmentName ?? "",
-        calibrationAgency: data?.calibrationAgency ?? "",
-        calibrationDate: data?.calibrationDate ?? "",
-        calibrationDueDate: data?.calibrationDueDate ?? "",
         itemCost: data?.itemCost ?? 0,
         itemSerialNumber: data?.itemSerialNumber ?? "",
-        location: data?.location ?? "",
+        parentLocation: data?.parentLocation ?? "",
+        presentLocation: data?.presentLocation ?? "",
         remarks: data?.remarks ?? "",
         soNo: data?.soNo ?? "",
         soDate: data?.soDate ?? "",
         ssrNo: data?.ssrNo ?? "",
         serviceStatus: data?.serviceStatus ?? "",
         specification: data?.specification ?? "",
-        initiateOfficer: data?.initiateOfficer ?? "",
+        locationOfficer: data?.locationOfficer ?? "",
         projectId: data?.projectId ?? "",
         model: data?.model ?? "",
         make: data?.make ?? "",
-
+        photoName: data?.photoName ?? "",
+        fileName: data?.fileName ?? "",
+        warranty: data?.warranty ?? "",
+        procurementName: data?.procurementName ?? "",
+        crvNo: data?.crvNo ?? "",
+        crvDate: data?.crvDate ?? "",
 
       }));
     } catch (err) {
@@ -147,8 +150,8 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
     // projectSsrNo: stringWithCommonRules("Project SSR number"),
     itemSerialNumber: stringWithCommonRules("Serial number")
       .notOneOf(serialNumberList, "Serial number already exists"),
-    location: stringWithCommonRules("Location"),
-
+    parentLocation: stringWithCommonRules("Parent Location"),
+    presentLocation: stringWithCommonRules("Present Location"),
     specification: stringWithCommonRules("Specification"),
 
     equipmentName: stringWithCommonRules("Equipment name"),
@@ -159,17 +162,17 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
     remarks: stringWithCommonRules("Remarks"),
     ssrNo: stringWithCommonRules("SSR No"),
 
-
+photo: Yup.mixed()
+  .test("fileType", "Only PNG, JPG, and JPEG files are allowed.", (value) => {
+    if (!value) return true; // not required; remove this line if photo is mandatory
+    return ["image/png", "image/jpeg"].includes(value.type);
+  }),
     projectId: requiredField,
-    initiateOfficer: requiredField,
-
-    //serviceStatus: requiredField,
-    calibrationAgency: requiredField,
-     calibrationDate: requiredField,
-     calibrationDueDate: requiredField,
-
-
-
+    locationOfficer: requiredField,
+     warranty: requiredField,
+     procurementName: stringWithCommonRules("Procurement Name"),
+     crvNo: stringWithCommonRules("CRV No"),
+     crvDate: requiredField,
     itemCost: Yup.number()
       .typeError("Item cost must be a number")
       .positive("Item cost must be greater than zero")
@@ -191,15 +194,13 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
 
   const handleSubmit = async (values) => {
-
+    console.log("Form values on submit:", values);
     const dto = {
       ...values,
-      calibrationDate: values.calibrationDate ? format(new Date(values.calibrationDate), "yyyy-MM-dd") : null,
-      calibrationDueDate: values.calibrationDueDate ? format(new Date(values.calibrationDueDate), "yyyy-MM-dd") : null,
       soDate: format(new Date(values.soDate), "yyyy-MM-dd"),
-
+      crvDate: format(new Date(values.crvDate), "yyyy-MM-dd"),
     }
-
+    console.log("DTO to submit:", dto); 
     try {
       if (mode === "add") {
         const confirmed = await showConfirmation();
@@ -250,7 +251,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
   const empOptions = employeeList.map(emp => ({
     value: emp.empId,
-    label: emp.empName
+    label: emp.salutation ? emp.salutation + ' ' + emp.empName : emp.empName
   }));
 
 
@@ -296,7 +297,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
           <Navbar />
           <div className="expert-form-container">
             <div className="form-card">
-              <h4 className="form-title">{mode === "add" ? "Add Equipment" : "Edit Equipment"}</h4>
+              <h4 className="form-title">{mode === "add" ? "Add Equipment Details" : "Edit Equipment Details"}</h4>
               <Formik
                 initialValues={formData}
                 validationSchema={validationSchema}
@@ -317,7 +318,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
                       <div className="col-md-3">
                         <div className="form-group">
-                          <label htmlFor="equipmentName" className="text-start d-block">Equipment Name : <span className="text-danger">*</span></label>
+                          <label htmlFor="equipmentName" className="text-start d-block"> Name of Equipment : <span className="text-danger">*</span></label>
                           <Field
                             type="text"
                             name="equipmentName"
@@ -325,6 +326,19 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
                             placeholder="Enter Equipment Name"
                           />
                           <ErrorMessage name="equipmentName" component="div" className="text-danger text-start" />
+                        </div>
+                      </div>
+
+                       <div className="col-md-3">
+                        <div className="form-group">
+                          <label htmlFor="procurementName" className="text-start d-block">Procurement Name: <span className="text-danger">*</span></label>
+                          <Field
+                            type="text"
+                            name="procurementName"
+                            className="form-control mb-2"
+                            placeholder="Enter Procurement Name"
+                          />
+                          <ErrorMessage name="procurementName" component="div" className="text-danger text-start" />
                         </div>
                       </div>
 
@@ -381,12 +395,12 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
                       <div className="col-md-3">
                         <div className="form-group">
-                          <label htmlFor="soNo" className="text-start d-block">So Number: <span className="text-danger">*</span></label>
+                          <label htmlFor="soNo" className="text-start d-block">Supply Order Number: <span className="text-danger">*</span></label>
                           <Field
                             type="text"
                             name="soNo"
                             className="form-control mb-2"
-                            placeholder="Enter So Number"
+                            placeholder="Enter Supply Order Number"
                           />
                           <ErrorMessage name="soNo" component="div" className="text-danger text-start" />
                         </div>
@@ -395,7 +409,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
                       <div className="col-md-3">
                         <div className="form-group">
                           <label htmlFor="soDate" className="text-start d-block">
-                            So Date : <span className="text-danger">*</span>
+                            Supply Order Date : <span className="text-danger">*</span>
                           </label>
 
                           <DatePicker
@@ -408,7 +422,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
                               }
                             }}
                             className="form-control mb-2"
-                            placeholderText="Select So Date"
+                            placeholderText="Select Supply Order Date"
                             dateFormat="dd-MM-yyyy"
                             showYearDropdown
                             showMonthDropdown
@@ -439,14 +453,14 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
                       <div className="col-md-3">
                         <div className="form-group">
-                          <label htmlFor="location" className="text-start d-block">Location : <span className="text-danger">*</span></label>
+                          <label htmlFor="parentLocation" className="text-start d-block">Parent Location : <span className="text-danger">*</span></label>
                           <Field
                             type="text"
-                            name="location"
+                            name="parentLocation"
                             className="form-control mb-2"
-                            placeholder="Enter Location"
+                            placeholder="Enter Parent Location"
                           />
-                          <ErrorMessage name="location" component="div" className="text-danger text-start" />
+                          <ErrorMessage name="parentLocation" component="div" className="text-danger text-start" />
                         </div>
                       </div>
 
@@ -465,16 +479,16 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
                       <div className="col-md-3">
                         <div className="form-group">
-                          <label htmlFor="initiateOfficer" className="text-start d-block">Initiating Officer : <span className="text-danger">*</span></label>
+                          <label htmlFor="locationOfficer" className="text-start d-block">Location Officer : <span className="text-danger">*</span></label>
                           <Select
                             className="text-start"
                             options={empOptions}
-                            value={empOptions.find(opt => opt.value === values.initiateOfficer) || null}
-                            onChange={(selected) => setFieldValue("initiateOfficer", selected ? selected.value : "")}
+                            value={empOptions.find(opt => opt.value === values.locationOfficer) || null}
+                            onChange={(selected) => setFieldValue("locationOfficer", selected ? selected.value : "")}
                             isClearable
                             placeholder="Select"
                           />
-                          <ErrorMessage name="initiateOfficer" component="div" className="text-danger text-start" />
+                          <ErrorMessage name="locationOfficer" component="div" className="text-danger text-start" />
                         </div>
                       </div>
 
@@ -497,17 +511,22 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
                       <div className="col-md-3">
                         <div className="form-group">
-                          <label htmlFor="specification" className="text-start d-block">Specification : <span className="text-danger">*</span></label>
+                          <label htmlFor="presentLocation" className="text-start d-block">Present Location : <span className="text-danger">*</span></label>
                           <Field
-                            type="text" name="specification" className="form-control mb-2" placeholder="Enter Specification" />
-                          <ErrorMessage name="specification" component="div" className="text-danger text-start" />
+                            type="text"
+                            name="presentLocation"
+                            className="form-control mb-2"
+                            placeholder="Enter Present Location"
+                          />
+                          <ErrorMessage name="presentLocation" component="div" className="text-danger text-start" />
                         </div>
                       </div>
+                      
 
                       <div className="col-md-3">
                         <div className="form-group">
                           <label htmlFor="photo" className="text-start d-block">Photo Upload :
-                            {mode === 'edit' &&
+                            {mode === 'edit' && values.photoName &&(
                               <button
                                 type="button"
                                 className="btn btn-sm btn-outline-success"
@@ -515,10 +534,11 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
                               >
                                 <FaDownload size={16} />
                               </button>
+                            )
                             }
                           </label>
 
-                          <input id="photo" name="photo" type="file" className="form-control mb-2"
+                          <input id="photo" name="photo" type="file" className="form-control mb-2" accept=".png,.jpg,.jpeg"
                             onChange={(event) => {
                               const file = event.currentTarget.files[0];
                               setFieldValue("photo", file);
@@ -532,14 +552,14 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
                       <div className="col-md-3">
                         <div className="form-group">
                           <label htmlFor="file" className="text-start d-block">File Upload : &nbsp;
-                            {mode === 'edit' &&
+                            {mode === 'edit' && values.fileName &&(
                               <button
                                 type="button"
                                 className="btn btn-sm btn-outline-success"
                                 onClick={() => handleDownload(values.equipmentId, "file")}
                               >
                                 <FaDownload size={16} />
-                              </button>}
+                              </button>)}
                           </label>
 
                           <input id="file" name="file" type="file" className="form-control mb-2"
@@ -581,7 +601,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
                       </div>
 
 
-                       <div className="col-md-3">
+                       {/* <div className="col-md-3">
                         <div className="form-group">
                           <label htmlFor="calibrationAgency" className="text-start d-block">Calibration Agency :  <span className="text-danger">*</span></label>
                           <Field
@@ -647,8 +667,72 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
                           <ErrorMessage name="calibrationDueDate" component="div" className="text-danger text-start" />
                         </div>
-                      </div> 
+                      </div> */}
 
+                      <div className="col-md-3">
+                        <div className="form-group">
+                          <label htmlFor="warranty" className="text-start d-block">Warranty: <span className="text-danger">*</span></label>
+                          <Field
+                            type="text"
+                            name="warranty"
+                            className="form-control mb-2"
+                            placeholder="Enter Warranty"
+                          />
+                          <ErrorMessage name="warranty" component="div" className="text-danger text-start" />
+                        </div>
+                      </div>
+
+                      {/* ✅ NEW: CRV No */}
+                      <div className="col-md-3">
+                        <div className="form-group">
+                          <label htmlFor="crvNo" className="text-start d-block">CRV No: <span className="text-danger">*</span></label>
+                          <Field type="text" name="crvNo" className="form-control mb-2" placeholder="Enter CRV No" />
+                          <ErrorMessage name="crvNo" component="div" className="text-danger text-start" />
+                        </div>
+                      </div>
+
+                      {/* ✅ NEW: CRV Date */}
+                      <div className="col-md-3">
+                        <div className="form-group">
+                          <label htmlFor="crvDate" className="text-start d-block">CRV Date: <span className="text-danger">*</span></label>
+                          <DatePicker
+                            selected={values.crvDate}
+                            onChange={(date) => setFieldValue("crvDate", date)}
+                            className="form-control mb-2"
+                            placeholderText="Select CRV Date"
+                            dateFormat="dd-MM-yyyy"
+                            showYearDropdown
+                            showMonthDropdown
+                            dropdownMode="select"
+                            minDate={getMinDate()}
+                            maxDate={getMaxDate()}
+                            onKeyDown={(e) => e.preventDefault()}
+                          />
+                          <ErrorMessage name="crvDate" component="div" className="text-danger text-start" />
+                        </div>
+                      </div>
+                      
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label htmlFor="specification" className="text-start d-block">Specification : <span className="text-danger">*</span></label>
+                          <Field
+                            type="text" name="specification" className="form-control mb-2" placeholder="Enter Specification" />
+                          <ErrorMessage name="specification" component="div" className="text-danger text-start" />
+                        </div>
+                      </div>
+                      {/* <div className="col-md-3">
+                        <div className="form-group">
+                          <label htmlFor="amc" className="text-start d-block">AMC: <span className="text-danger">*</span></label>
+                          <Field
+                            type="text"
+                            name="amc"
+                            className="form-control mb-2"
+                            placeholder="Enter AMC"
+                          />
+                          <ErrorMessage name="amc" component="div" className="text-danger text-start" />
+                        </div>
+                      </div> */}
+                         
                     </div>
                     <div align="center">
                       <button type="submit" className={`btn ${mode === "add" ? "submit" : "edit"} mt-3`} >

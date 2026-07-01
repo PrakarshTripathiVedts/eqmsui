@@ -1,0 +1,52 @@
+/* ================= TAB CONTAINER ================= */
+.tabContainer {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+/* ================= TAB ================= */
+.tabItem {
+  background: #ffffff;
+  padding: 14px 36px;
+  border-radius: 14px;
+
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
+
+  cursor: pointer;
+  user-select: none;
+
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+
+  transition: all 0.3s ease;
+}
+
+/* ================= HOVER ================= */
+.tabItem:hover {
+  background: linear-gradient(135deg, #3841b2, #81c3e6);
+  color: #ffffff; /* white text on hover */
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+/* ================= ACTIVE ================= */
+.active {
+  background: linear-gradient(135deg, #3841b2, #81c3e6); /* active green gradient */
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 18px 42px rgba(31, 122, 90, 0.45);
+}
+
+/* ================= ACTIVE TEXT ================= */
+.active .tabItem {
+  color: #ffffff;
+}
+
+/* ================= CLICK FEEDBACK ================= */
+.tabItem:active {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+}

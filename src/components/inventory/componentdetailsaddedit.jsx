@@ -133,7 +133,12 @@ const ComponentDetailsAddEditComponent = ({ mode, componentDetailsId, componentV
 
     switch (status) {
         case 'list':
-            return <ComponentDetails></ComponentDetails>;
+    return (
+        <ComponentDetails
+            selectedComponentId={formData.componentId}
+            selectedComponentName={componentName}
+        />
+    );
         default:
             return (
                 <div>

@@ -129,3 +129,50 @@ export const UpdateComponentDetailsData = async (id, Data) => {
     throw error;
   }
 }
+
+
+export const saveComponentIssuedData = async (data) => {
+  try {
+    
+    const response = await axios.post(`${API_URL}api/component/component-issued`, data, {
+      headers: {
+         'Content-Type': 'application/json',
+        ...authHeader()
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error saving Component Issued:", error);
+    throw error;
+  }
+}
+
+export const getComponentIssuedListByComponent = async (componentId) => {
+  try {
+    const response = await axios.get(`${API_URL}api/component/component-issued-component-id/${componentId}`, {
+      headers: {
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching component Issued Date by Component ID:", error);
+    throw error;
+  }
+}
+
+export const saveComponentReturnedData = async (data) => {
+  try {
+    
+    const response = await axios.post(`${API_URL}api/component/component-returned`, data, {
+      headers: {
+         'Content-Type': 'application/json',
+        ...authHeader()
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error saving Component Returned:", error);
+    throw error;
+  }
+}

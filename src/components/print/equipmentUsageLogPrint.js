@@ -2,52 +2,88 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { format } from "date-fns";
 
-
 pdfMake.vfs = pdfFonts.vfs;
 
-export const printEquipmentUsageLog = (equipmentLogList, equipmentName, fromDateValue, toDateValue) => {
-    // Build table body
+export const printEquipmentUsageLog = (equipmentLogList, equipmentName, fromDateValue, toDateValue, equipmentList) => {
     const tableBody = [];
-
     const fromDate = format(new Date(fromDateValue), "dd-MM-yyyy");
     const toDate = format(new Date(toDateValue), "dd-MM-yyyy");
-
+    console.log('equipmentName', equipmentName);
+    const equipmentData = equipmentList.find(e => e.equipmentName === equipmentName) || {};
+    console.log("Equipment Data for Printing:", equipmentData);
     // Table Header
     tableBody.push([
-        { text: "SN", style: "tableHeader" },
-        { text: "Start Time", style: "tableHeader" },
-        { text: "End Time", style: "tableHeader" },
-        { text: "Total Hrs", style: "tableHeader" },
+        { text: "SN",          style: "tableHeader" },
+        { text: "Start Time",  style: "tableHeader" },
+        { text: "End Time",    style: "tableHeader" },
+        { text: "Total Hrs",   style: "tableHeader" },
         { text: "Description", style: "tableHeader" },
-        { text: "Used By", style: "tableHeader" }
+        { text: "Used By",     style: "tableHeader" }
     ]);
 
     // Table Rows
     equipmentLogList.forEach((item, index) => {
         tableBody.push([
             index + 1,
-            item.startTime ? item.startTime : '-',
-            item.endTime ? item.endTime : '-',
-             { text: item.totalHours || "", alignment: "right" },  // <-- right aligned
+            item.startTime ? item.startTime : "-",
+            item.endTime   ? item.endTime   : "-",
+            { text: item.totalHours || "", alignment: "right" },
             item.description || "",
-            item.usedByName || ""
+            item.usedByName  || ""
         ]);
     });
 
-    // PDF Document Definition
+    // Equipment fields — 6 items
+    const equipmentFields = [
+        { label: "Name of the Equipment",         value: equipmentData?.equipmentName   || "" },
+        { label: "Equipment Serial No.",          value: equipmentData?.itemSerialNumber || "" },
+        { label: "Make / Model",                  value: `${equipmentData?.make || ""}/${equipmentData?.model || ""}` },
+        { label: "Warranty",                      value: equipmentData?.warranty        || "" },
+        { label: "Division Holding with SSR NO.", value: equipmentData?.ssrNo           || "" },
+        { label: "Project Code",                  value: equipmentData?.projectCode     || "" },
+    ];
+
+    // Chunk into 3 paired rows (2 fields per row)
+    const infoRows = [];
+    for (let i = 0; i < equipmentFields.length; i += 2) {
+        const left  = equipmentFields[i];
+        const right = equipmentFields[i + 1] || { label: "", value: "" };
+        infoRows.push([
+            { text: left.label,  style: "infoLabel" },
+            { text: left.value,  style: "infoValue" },  // pdfmake wraps automatically within column width
+            { text: right.label, style: "infoLabel" },
+            { text: right.value, style: "infoValue" },
+        ]);
+    }
+
+    const equipmentInfoTable = {
+        style: "tableStyle",
+        table: {
+            widths: [120, 263, 120, 263],  // label=fixed, value=flexible — text wraps inside "*" cols
+            body: infoRows
+        },
+        layout: {
+            hLineColor: "#aaa",
+            vLineColor: "#aaa",
+        }
+    };
+
+    // Page width for A3 = 841.89pt, minus margins (20 each side) = ~802pt available
     const docDefinition = {
-        pageSize: "A3",
-        
+        pageSize: "A4",
+        pageOrientation: "landscape",   // ← landscape gives much more horizontal space
         pageMargins: [20, 20, 20, 20],
 
         content: [
-            { text: "Equipment Usage Log Report", style: "title", margin: [0, 0, 0, 10] },
-
             {
-
-                style: "subTitle",
+                text: "Equipment Usage Log Report",
+                style: "title",
+                margin: [0, 0, 0, 10]
+            },
+            {
                 alignment: "center",
                 margin: [0, 0, 0, 10],
+                fontSize: 12,
                 text: [
                     "Equipment : ",
                     { text: equipmentName, color: "blue", bold: true },
@@ -58,19 +94,17 @@ export const printEquipmentUsageLog = (equipmentLogList, equipmentName, fromDate
                 ]
             },
 
+            equipmentInfoTable,
+
             {
                 style: "tableStyle",
                 table: {
                     headerRows: 1,
-                    //widths: ["auto", "auto", "auto", "auto", "auto", "auto"],  // Increased width
-                    widths: ["auto", "auto", "auto", "auto", "*", "*"], 
-
+                    widths: ["auto", "auto", "auto", "auto", "*", "*"],
                     body: tableBody,
                 },
                 layout: {
-                    fillColor: function (rowIndex) {
-                        return rowIndex === 0 ? "#AED6F1" : null;
-                    },
+                    fillColor: (rowIndex) => rowIndex === 0 ? "#AED6F1" : null,
                     hLineColor: "#aaa",
                     vLineColor: "#aaa",
                 }
@@ -90,6 +124,13 @@ export const printEquipmentUsageLog = (equipmentLogList, equipmentName, fromDate
             },
             tableStyle: {
                 margin: [0, 5, 0, 15]
+            },
+            infoLabel: {
+                bold: true,
+                fontSize: 10,
+            },
+            infoValue: {
+                fontSize: 10,
             }
         }
     };
