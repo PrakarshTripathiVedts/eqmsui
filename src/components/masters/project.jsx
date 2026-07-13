@@ -5,13 +5,14 @@ import Navbar from "../navbar/navbar";
 import { FaEdit } from "react-icons/fa";
 import Datatable from "../datatable/datatable";
 import { Link } from "react-router-dom";
-import ProjectAddEditComponent from "./projectAddEditComponent"; // ✅ correct import
+import ProjectAddEditComponent from "./projectAddEditComponent";
 
 const FORM_URL = "projectMaster";
 
 const ProjectComponent = () => {
   const [projectList, setProjectList] = useState([]);
-  const [status, setStatus]           = useState("list"); // ✅ default = "list" not ""
+  const [rawProjectList, setRawProjectList] = useState([]); // NEW: unformatted data, used for duplicate-code checks
+  const [status, setStatus]           = useState("list");
   const [projectId, setProjectId]     = useState(null);
 
   const [permissions, setPermissions] = useState({
@@ -49,7 +50,7 @@ const ProjectComponent = () => {
     { name: "Project Code",               selector: (row) => row.projectCode,       sortable: true, align: "text-center" },
     { name: "Project Name",               selector: (row) => row.projectName,       sortable: true, align: "text-start"  },
     { name: "Sanction Date",              selector: (row) => row.sanctionDate,      sortable: true, align: "text-center" },
-    { name: "Sanction Cost (₹) Lakh",    selector: (row) => row.sanctionCost,      sortable: true, align: "text-end"   },
+    // { name: "Sanction Cost (₹) Lakh",    selector: (row) => row.sanctionCost,      sortable: true, align: "text-end"   },
     { name: "PDC",                        selector: (row) => row.pdc,               sortable: true, align: "text-center" },
     { name: "Project Director",           selector: (row) => row.projectDirector,   sortable: true, align: "text-start"  },
   ];
@@ -83,7 +84,7 @@ const ProjectComponent = () => {
         projectCode:     item.projectCode ?? "-",
         projectName:     item.projectName ?? "-",
         sanctionDate:    formatDate(item.sanctionDate),
-        sanctionCost:    formatINR(item.totalSanctionCost),
+        // sanctionCost:    formatINR(item.totalSanctionCost),
         pdc:             formatDate(item.pdc),
         projectDirector: item.projectDirectorName ?? "-",
         action: permissions.forEdit ? (
@@ -103,8 +104,11 @@ const ProjectComponent = () => {
   const getProjectMasterList = async () => {
     try {
       const data = await getProjectListService();
-      setTableData(Array.isArray(data) && data.length > 0 ? data : []);
+      const list = Array.isArray(data) && data.length > 0 ? data : [];
+      setRawProjectList(list);   // NEW: keep raw data (has projectId + projectCode) for validation
+      setTableData(list);
     } catch {
+      setRawProjectList([]);
       setTableData([]);
     }
   };
@@ -137,6 +141,7 @@ const ProjectComponent = () => {
           mode="add"
           setStatus={setStatus}
           refreshList={getProjectMasterList}
+          existingProjects={rawProjectList}   // NEW
         />
       );
     case "edit":
@@ -146,6 +151,7 @@ const ProjectComponent = () => {
           projectId={projectId}
           setStatus={setStatus}
           refreshList={getProjectMasterList}
+          existingProjects={rawProjectList}   // NEW
         />
       );
     default: // "list"

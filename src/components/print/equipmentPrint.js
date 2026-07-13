@@ -48,8 +48,8 @@ export const printEquipmentDownload = (data) => {
             { text: getVal("itemCost") || "-", colSpan: 3, style: "tableDataCell" },
             {},
             {},
-            { text: "LOCATION.", style: "tableHeaderCell" },
-            { text: getVal("location") || "-", style: "tableDataCell" },
+            { text: "PARENT LOCATION.", style: "tableHeaderCell" },
+            { text: getVal("parentLocation") || "-", style: "tableDataCell" },
         ],
 
 

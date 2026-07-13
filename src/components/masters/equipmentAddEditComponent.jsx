@@ -159,7 +159,6 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
     model: stringWithCommonRules("Model"),
     soNo: stringWithCommonRules("So Number"),
     soDate: stringWithCommonRules("So Date"),
-    remarks: stringWithCommonRules("Remarks"),
     ssrNo: stringWithCommonRules("SSR No"),
 
 photo: Yup.mixed()
@@ -251,7 +250,7 @@ photo: Yup.mixed()
 
   const empOptions = employeeList.map(emp => ({
     value: emp.empId,
-    label: emp.salutation ? emp.salutation + ' ' + emp.empName : emp.empName
+    label: emp.displayName ?? `${emp.firstName ?? ""} ${emp.lastName ?? ""}`.trim(),
   }));
 
 
@@ -395,7 +394,7 @@ photo: Yup.mixed()
 
                       <div className="col-md-3">
                         <div className="form-group">
-                          <label htmlFor="soNo" className="text-start d-block">Supply Order Number: <span className="text-danger">*</span></label>
+                          <label htmlFor="soNo" className="text-start d-block">Supply Order No / GeM Contract No: <span className="text-danger">*</span></label>
                           <Field
                             type="text"
                             name="soNo"
@@ -464,22 +463,11 @@ photo: Yup.mixed()
                         </div>
                       </div>
 
-                      <div className="col-md-3">
-                        <div className="form-group">
-                          <label htmlFor="remarks" className="text-start d-block">Remarks : <span className="text-danger">*</span></label>
-                          <Field
-                            type="text"
-                            name="remarks"
-                            className="form-control mb-2"
-                            placeholder="Enter Remarks"
-                          />
-                          <ErrorMessage name="remarks" component="div" className="text-danger text-start" />
-                        </div>
-                      </div>
+                      
 
                       <div className="col-md-3">
                         <div className="form-group">
-                          <label htmlFor="locationOfficer" className="text-start d-block">Location Officer : <span className="text-danger">*</span></label>
+                          <label htmlFor="locationOfficer" className="text-start d-block">Person Incharge : <span className="text-danger">*</span></label>
                           <Select
                             className="text-start"
                             options={empOptions}
@@ -718,6 +706,18 @@ photo: Yup.mixed()
                           <Field
                             type="text" name="specification" className="form-control mb-2" placeholder="Enter Specification" />
                           <ErrorMessage name="specification" component="div" className="text-danger text-start" />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label htmlFor="remarks" className="text-start d-block">Remarks : </label>
+                          <Field
+                            type="text"
+                            name="remarks"
+                            className="form-control mb-2"
+                            placeholder="Enter Remarks"
+                          />
+                          <ErrorMessage name="remarks" component="div" className="text-danger text-start" />
                         </div>
                       </div>
                       {/* <div className="col-md-3">

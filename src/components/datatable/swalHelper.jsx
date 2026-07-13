@@ -30,3 +30,20 @@ export const showConfirmation = async () => {
 
   return result.isConfirmed;
 };
+
+export const showConfirmationResetPassword = async () => {
+  const result = await Swal.fire({
+    title: "Are you sure you want to reset the password?",
+    //text: "You can't undo this!",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Submit",
+    cancelButtonText: "Cancel",
+    customClass: {
+        confirmButton: "submit",
+        cancelButton: "delete"
+      },
+  });
+
+  return result.isConfirmed;
+};

@@ -176,6 +176,15 @@ const Navbar = () => {
       </button>
     </li>
     <li>
+      <button
+        type="button"
+        className="dropdown-item"
+        onClick={() => navigate("/auditstamping")}
+      >
+        Audit Stamping
+      </button>
+    </li>
+    <li>
       <button 
         type="button"
         className="dropdown-item" 

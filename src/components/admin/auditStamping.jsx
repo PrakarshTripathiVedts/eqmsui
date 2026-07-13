@@ -5,24 +5,13 @@ import Select from "react-select";
 import Datatable from "../datatable/datatable";
 import Navbar from "../navbar/navbar";
 import { Link } from "react-router-dom"; // Added for BACK button redirection
-import { getAuditStampingList, getUserManagerList, getFormDetailsList } from "../../services/admin.service";
+import { getAuditStampingList, getUserManagerList } from "../../services/admin.service";
 import { formatfromtoDate } from "../../services/auth.service";
-
-/* ─── match this to your formUrl value in DB for this page ─── */
-const FORM_URL = "auditStamping";
 
 const AuditStamping = () => {
   const [auditStamping, setAuditStamping] = useState([]);
   const [userList, setUserList] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  
-  // Permissions State
-  const [permissions, setPermissions] = useState({
-    forView:   false,
-    forAdd:    false,
-    forEdit:   false,
-    forDelete: false,
-  });
 
   const today = new Date();
   const [fromDate, setFromDate] = useState(() => {
@@ -59,39 +48,10 @@ const AuditStamping = () => {
     { name: "SN", selector: (row) => row.sn, sortable: true, align: "text-center" },
     { name: "Login Date", selector: (row) => row.loginDate, sortable: true, sortValue: (row) => parseDateTime(row.loginDate), align: "text-center" },
     { name: "IP Address", selector: (row) => row.ipAddress, sortable: true, align: "text-center" },
-    { name: "Mac Address", selector: (row) => row.macAddress, sortable: true, align: "text-center" },
+    // { name: "Mac Address", selector: (row) => row.macAddress, sortable: true, align: "text-center" },
     { name: "Logout Type", selector: (row) => row.logoutType, sortable: true, align: "text-center" },
     { name: "Logout Date", selector: (row) => row.logoutDate, sortable: true, sortValue: (row) => parseDateTime(row.logoutDate), align: "text-center" },
   ];
-
-  /* ================= LOAD PERMISSIONS ================= */
-  useEffect(() => {
-    const roleId = localStorage.getItem("roleId");
-
-    const loadPermissions = async () => {
-      try {
-        const details = await getFormDetailsList(roleId);
-        const detailArray = Array.isArray(details) ? details : details?.data ?? [];
-
-        const match = detailArray.find(
-          (d) => d.formUrl?.toLowerCase() === FORM_URL.toLowerCase()
-        );
-
-        if (match) {
-          setPermissions({
-            forView:   match.forView   === true || match.forView   === 1 || match.forView   === "Y",
-            forAdd:    match.forAdd    === true || match.forAdd    === 1 || match.forAdd    === "Y",
-            forEdit:   match.forEdit   === true || match.forEdit   === 1 || match.forEdit   === "Y",
-            forDelete: match.forDelete === true || match.forDelete === 1 || match.forDelete === "Y",
-          });
-        }
-      } catch (err) {
-        console.error("Failed to load permissions", err);
-      }
-    };
-
-    loadPermissions();
-  }, []);
 
   /** Fetch audit list for given user + date range */
   const fetchAuditList = useCallback(async (user, from, to) => {
@@ -106,7 +66,7 @@ const AuditStamping = () => {
             ? format(new Date(item.loginDate), "dd-MM-yyyy HH:mm:ss")
             : "-",
           ipAddress: item.ipAddress || "-",
-          macAddress: item.macAddress || "-",
+          // macAddress: item.macAddress || "-",
           logoutType: item.logoutType || "-",
           logoutDate: item.logoutDate
             ? format(new Date(item.logoutDate), "dd-MM-yyyy HH:mm:ss")
@@ -120,7 +80,6 @@ const AuditStamping = () => {
 
   /** On mount: load users, set default, fetch initial data */
   useEffect(() => {
-    // Only proceed to load structural user lists if viewing permissions pass 
     const fetchUsers = async () => {
       try {
         const allUsers = await getUserManagerList();
@@ -133,7 +92,7 @@ const AuditStamping = () => {
 
         const options = filtered.map((u) => ({
           value: u.userName,
-          label: `${u.userName} (${u.empName})`,
+          label: `${u.userName} (${u.empTitle} ${u.empName})`,
         }));
 
         setUserList(options);
@@ -160,24 +119,6 @@ const AuditStamping = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ================= NO VIEW PERMISSION BLOCK ================= */
-  if (!permissions.forView) {
-    return (
-      <div>
-        <Navbar />
-        <div className="card mt-5">
-          <div className="card-body text-center">
-            <h3 className="custom-heading">Audit Stamping</h3>
-            <p className="text-danger mt-3">
-              You do not have permission to view this page.
-            </p>
-            <Link className="mt-2 btn back" to="/dashboard">BACK</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   /* ================= MAIN VIEW ================= */
   return (
     <div>
@@ -185,7 +126,7 @@ const AuditStamping = () => {
       <div className="card mt-5">
         <div className="card-body">
           <div className="row">
-            <div className="col-md-12 text-start">
+            <div className="col-md-12 text-center">
               <h3 className="custom-heading">Audit Stamping</h3>
               <br />
             </div>
@@ -242,7 +183,7 @@ const AuditStamping = () => {
                 showMonthDropdown
                 dropdownMode="select"
                 minDate={getMinDate()}
-                maxDate={getMaxDate()}
+                maxDate={toDate || getMaxDate()}
                 onKeyDown={(e) => e.preventDefault()}
               />
             </div>
@@ -266,7 +207,7 @@ const AuditStamping = () => {
                 showYearDropdown
                 showMonthDropdown
                 dropdownMode="select"
-                minDate={getMinDate()}
+                minDate={fromDate || getMinDate()}
                 maxDate={getMaxDate()}
                 onKeyDown={(e) => e.preventDefault()}
               />
@@ -280,7 +221,7 @@ const AuditStamping = () => {
             <Datatable columns={columns} data={auditStamping} />
           </div>
 
-          {/* Optional Action Footer (e.g. Back Link matching design) */}
+          {/* Optional Action Footer */}
           <div align="center" className="mt-3">
             <Link className="mt-2 btn back" to="/dashboard">BACK</Link>
           </div>

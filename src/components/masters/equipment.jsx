@@ -59,10 +59,9 @@ const Equipment = () => {
     { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
     { name: "Name of Equipment", selector: (row) => row.equipmentName, sortable: true, align: 'text-start' },
     { name: "Serial No", selector: (row) => row.itemSerialNumber, sortable: true, align: 'text-center' },
-    { name: "Make", selector: (row) => row.make, sortable: true, align: 'text-start' },
-    { name: "Model", selector: (row) => row.model, sortable: true, align: 'text-start' },
+    { name: "Present Location", selector: (row) => row.presentLocation, sortable: true, align: 'text-start' },
     { name: "Project Code", selector: (row) => row.projectCode, sortable: true, align: 'text-center' },
-    { name: "Parent Location", selector: (row) => row.location, sortable: true, align: 'text-start' },
+    { name: "Parent Location", selector: (row) => row.parentLocation, sortable: true, align: 'text-start' },
     { name: "SSRNo", selector: (row) => row.ssrNo, sortable: true, align: 'text-start' },
   ];
 
@@ -113,10 +112,9 @@ const Equipment = () => {
         sn: index + 1 + '.',
         equipmentName: item.equipmentName ?? '-',
         itemSerialNumber: item.itemSerialNumber ?? '-',
-        make: item.make ?? '-',
-        model: item.model ?? '-',
+        presentLocation: item.presentLocation ?? '-',
         projectCode: item.projectCode ?? '-',
-        location: item.parentLocation ?? '-',
+        parentLocation: item.parentLocation ?? '-',
         ssrNo: item.ssrNo ?? '-',
         action: (
           <>

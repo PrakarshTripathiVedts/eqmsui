@@ -284,14 +284,14 @@ export const updateUserService = async (Data) => { // 💡 Removed 'id' paramete
 
 export const checkUsernameExistsService = async (username) => {
   try {
-    const response = await axios.get(`${API_URL}api/gatepass//user-manager/check-username?userName=${encodeURIComponent(username)}`, {
+    const response = await axios.get(`${API_URL}api/master/user-manager/check-username?userName=${encodeURIComponent(username)}`, {
       headers: {
         ...authHeader(),
       },
     });
     return response.data;
   } catch (error) {
-    console.error("Error fetching gatepass Details id:", error);
+    console.error("Error checking username existence:", error);
     throw error;
   }
 }
