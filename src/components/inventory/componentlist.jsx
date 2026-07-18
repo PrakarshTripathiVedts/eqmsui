@@ -142,7 +142,7 @@ const ComponentList = () => {
         <Navbar />
         <div className="card p-2">
           <div className="card-body text-center">
-            <h3>Component</h3>
+            <h3>Component List</h3>
             <p className="text-danger mt-3">You do not have permission to view this page.</p>
             <Link className="mt-2 btn back" to="/dashboard">BACK</Link>
           </div>
@@ -170,7 +170,7 @@ const ComponentList = () => {
           <Navbar />
           <div className="card p-2">
             <div className="card-body text-center">
-              <h3>Component</h3>
+              <h3>Component List</h3>
               <div id="card-body customized-card">
                 <Datatable columns={columns} data={componentList} />
               </div>

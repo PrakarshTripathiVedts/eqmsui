@@ -209,7 +209,7 @@ const AlertRow = ({ item, today }) => {
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
         <div style={ds.rowDate}>{format(parseISO(item.calibrationDueDate), "dd-MM-yyyy")}</div>
-        <span style={{ ...ds.pill, background: badgeBg, color: badgeColor }}>
+        <span  className="text-danger" style={{ ...ds.pill, background: badgeBg, color: badgeColor }}>
           {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? "Today" : `${daysLeft}d left`}
         </span>
       </div>
@@ -306,8 +306,8 @@ const Dashboard = () => {
     differenceInDays(parseISO(i.calibrationDueDate), today) < 0
   ).length;
 
-  const gpOut     = gatepassList.filter(g => g.status === "O").length;
-  const gpPending = gatepassList.filter(g => g.status === "P").length;
+  const gpOut     = gatepassList.filter(g => g.itemStatus === "O").length;
+  const gpPending = gatepassList.filter(g => g.itemStatus === "P").length;
 
   const CAT_COLORS = { RMGP: "#E24B4A", TSGP: "#EF9F27", NRMGP: "#355cdd", "NRMGP-C": "#8B5CF6" };
 

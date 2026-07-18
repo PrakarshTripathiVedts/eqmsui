@@ -6,8 +6,10 @@ import { getCalibrationMasterListById, getEquipmentListService } from "../../ser
 import { getFormDetailsList } from "../../services/admin.service"; // Imported for permission checks
 import Select from "react-select";
 import CalibrationAddEditComponent from "./calibrationAddEditComponent";
-import { FaEdit } from "react-icons/fa";
+import { FaDownload, FaEdit } from "react-icons/fa";
 import { format } from "date-fns";
+import { Tooltip } from "react-tooltip";
+import { generateCalibrationPdf } from "./calibrationPrint";
 
 /* ─── match this to your formUrl value in DB for this page ─── */
 const FORM_URL = "calibration";
@@ -21,15 +23,15 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
   const [hasCalibration, setHasCalibration] = useState(false);
   const [status, setStatus] = useState('');
   const [latestAgency, setLatestAgency] = useState('');
-  const [latestDueDate, setLatestDueDate] = useState(''); 
+  const [latestDueDate, setLatestDueDate] = useState('');
   const [equipment, setEquipment] = useState({});
   const [latestCalibrationDate, setLatestCalibrationDate] = useState('');
 
   /* ================= PERMISSIONS STATE ================= */
   const [permissions, setPermissions] = useState({
-    forView:   false,
-    forAdd:    false,
-    forEdit:   false,
+    forView: false,
+    forAdd: false,
+    forEdit: false,
     forDelete: false,
   });
 
@@ -48,9 +50,9 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
 
         if (match) {
           setPermissions({
-            forView:   match.forView   === true || match.forView   === 1 || match.forView   === "Y",
-            forAdd:    match.forAdd    === true || match.forAdd    === 1 || match.forAdd    === "Y",
-            forEdit:   match.forEdit   === true || match.forEdit   === 1 || match.forEdit   === "Y",
+            forView: match.forView === true || match.forView === 1 || match.forView === "Y",
+            forAdd: match.forAdd === true || match.forAdd === 1 || match.forAdd === "Y",
+            forEdit: match.forEdit === true || match.forEdit === 1 || match.forEdit === "Y",
             forDelete: match.forDelete === true || match.forDelete === 1 || match.forDelete === "Y",
           });
         }
@@ -64,12 +66,12 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
 
   /* ================= BASE COLUMNS ================= */
   const baseColumns = [
-  { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-  { name: "Agency", selector: (row) => row.calibrationAgency, sortable: true, align: 'text-center' },  // ← ADD
-  { name: "Last Calibration Date", selector: (row) => row.calibrationDate, sortable: true, align: 'text-center' },
-  { name: "Calibration Due Date", selector: (row) => row.calibrationDueDate, sortable: true, align: 'text-center' },
-  { name: "Revision", selector: (row) => row.revision, sortable: true, align: 'text-center' },  // ← ADD
-];
+    { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
+    { name: "Agency", selector: (row) => row.calibrationAgency, sortable: true, align: 'text-center' },  // ← ADD
+    { name: "Last Calibration Date", selector: (row) => row.calibrationDate, sortable: true, align: 'text-center' },
+    { name: "Calibration Due Date", selector: (row) => row.calibrationDueDate, sortable: true, align: 'text-center' },
+    { name: "Revision", selector: (row) => row.revision, sortable: true, align: 'text-center' },  // ← ADD
+  ];
 
   /* Dynamic columns addition based on Edit permission */
   const columns = permissions.forEdit
@@ -99,15 +101,15 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
   }, [equipmentValue, permissions.forView]);
 
   useEffect(() => {
-   if (equipmentList.length > 0) {
-    const targetId = selectedEquipmentId || equipmentList[0].equipmentId;
-    const matched = equipmentList.find(e => e.equipmentId === Number(targetId) || e.equipmentId === targetId);
-    if (matched) {
-      setEquipmentValue(matched.equipmentId);
-      setEquipmentName(matched.equipmentName);
-      setEquipment(matched);  // ← full object set here
+    if (equipmentList.length > 0) {
+      const targetId = selectedEquipmentId || equipmentList[0].equipmentId;
+      const matched = equipmentList.find(e => e.equipmentId === Number(targetId) || e.equipmentId === targetId);
+      if (matched) {
+        setEquipmentValue(matched.equipmentId);
+        setEquipmentName(matched.equipmentName);
+        setEquipment(matched);  // ← full object set here
+      }
     }
-  }
   }, [equipmentList, selectedEquipmentId, selectedEquipmentName]);
 
   const getEquipmentMasterList = async () => {
@@ -142,10 +144,10 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
       const data = await getCalibrationMasterListById(equipmentValue);
       if (!data) return;
       if (Array.isArray(data) && data.length > 0) {
-        setHasCalibration(true); 
+        setHasCalibration(true);
         setTableData(data);
       } else {
-        setHasCalibration(false); 
+        setHasCalibration(false);
         setTableData([]);
       }
     } catch (err) {
@@ -153,6 +155,13 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
       setHasCalibration(false);
     }
   };
+
+  const handlePrint = (item) => {
+
+    generateCalibrationPdf(item, equipment)
+  };
+
+
 
   const setTableData = (data) => {
     const sortedData = [...data].sort(
@@ -171,13 +180,26 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
         action: permissions.forEdit ? (
           <>
             {index === 0 && item.calibrationId && (
-              <button
-                className="btn btn-warning btn-sm"
-                onClick={() => item.calibrationId != null && editCalibration(item.calibrationId)}
-                title="Edit Equipment"
-              >
-                <FaEdit size={16} />
-              </button>
+              <>
+                <button className="btn btn-outline-success btn-sm me-3"
+                  data-tooltip-id="Tooltip"
+                  data-tooltip-content="Print"
+                  data-tooltip-place="top"
+                  onClick={() => handlePrint(item)}
+                >
+                  <FaDownload />
+                </button>
+                <button
+                  className="btn btn-warning btn-sm"
+                  onClick={() => item.calibrationId != null && editCalibration(item.calibrationId)}
+                  data-tooltip-id="Tooltip"
+                  data-tooltip-content="Edit"
+                  data-tooltip-place="top"
+                >
+                  <FaEdit size={16} />
+                </button>
+                <Tooltip id="Tooltip" className='text-white tooltipName' />
+              </>
             )}
           </>
         ) : '-',
@@ -209,7 +231,7 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
       return <CalibrationAddEditComponent mode={'add'} equipmentValue={equipmentValue} equipmentName={equipmentName} setStatus={setStatus} latestAgency={latestAgency} latestDueDate={latestDueDate} latestCalibrationDate={latestCalibrationDate} hasCalibration={hasCalibration} equipment={equipment} refreshList={() => fetchCalibrationMasterListById(equipmentValue)} />;
     case 'edit':
       return <CalibrationAddEditComponent mode={'edit'} calibrationId={calibrationId} equipmentName={equipmentName} setStatus={setStatus} equipment={equipment} refreshList={() => fetchCalibrationMasterListById(equipmentValue)} />;
-    
+
     default:
       return (
         <div>

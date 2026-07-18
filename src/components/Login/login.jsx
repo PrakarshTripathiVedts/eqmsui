@@ -1,9 +1,8 @@
 import { useState } from "react";
 import './login.css';
-import loginimage from '../../assets/images/eqms-bg1.png';
+import loginimage from '../../assets/images/login_image.jpg';
 import drdologo from '../../assets/images/drdologo.png';
 import { MdPerson, MdVisibility, MdVisibilityOff } from "react-icons/md";
-//import bgImage from '../../assets/images/gradient-blue.jpg';
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import withRouter from "../../common/with-router";
@@ -13,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 const LoginPage = (props) => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const initialValues = { username: "", password: "" };
 
@@ -30,7 +30,6 @@ const LoginPage = (props) => {
   const handleLoginSubmit = async (values) => {
     setMessage("");
     setLoading(true);
-
     try {
       const { username, password } = values;
       const response = await login(username, password);
@@ -59,101 +58,102 @@ const LoginPage = (props) => {
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const [showPassword, setShowPassword] = useState(false);
-
   return (
-    <div className="login-wrapper d-flex flex-column position-relative" style={{ minHeight: '100vh' }}>
-      <header className="navbar navbar-expand-lg navbar-dark custom-header-bg px-2 py-2">
-        <div className="d-flex flex-column align-items-center mx-auto">
-          <h4 className="text-white mb-1">
-            Equipment & Project Inventory Monitoring System (EQPIMS Ver1.0)
-          </h4>
-          <h5 className="text-white mb-0">
-            Directorate of Portable Short Range Radar (DPSRR)
-          </h5>
+    <div className="login-page">
+      <header className="login-topbar">
+        <img src={drdologo} alt="DRDO Logo" className="login-topbar-logo" />
+        <div className="login-topbar-text">
+          <h1>Equipment &amp; Project Inventory Monitoring System (EQPIMS Ver1.0)</h1>
+          <h2 className="text-center">Directorate of Portable Short Range Radar (DPSRR)</h2>
         </div>
       </header>
 
-      {/* Main Container - Takes full height to keep form dead-center */}
-      <main className="flex-grow-1 d-flex justify-content-center align-items-center p-4 position-relative">
-        
-        {/* DRDO Logo: Absolutely positioned to the top-left of main container */}
-        <div className="position-absolute" style={{ top: '20px', left: '25px', zIndex: 10 }}>
-          <img 
-            src={drdologo} 
-            alt="DRDO Logo" 
-            style={{ width: '90px', height: '90px', objectFit: 'contain' }}
-          />
-        </div>
+      <main className="login-main">
+        {/* LEFT — instrument panel */}
+        <section className="login-visual">
+          <div className="radar-grid" aria-hidden="true"></div>
+          <div className="scan-line" aria-hidden="true"></div>
+          <div className="login-visual-content">
+            <img src={loginimage} alt="" className="login-visual-image" />
+          </div>
+          <div className="login-visual-caption">
 
-        {/* Login Form Card */}
-        <div className="card card-custom overflow-hidden w-100" style={{ maxWidth: '1100px' }}>
-          <div className="row g-0" style={{ minHeight: '500px' }}>
-            <div className="col-md-6 d-flex align-items-center justify-content-center p-4">
-              <img
-                src={loginimage}
-                alt="loginimage"
-                className="img-fluid"
-                style={{ maxWidth: '530px', maxHeight: '100%' }}
-              />
-            </div>
+            <p>Real-time visibility into equipment, calibration, and inventory across DPSRR installations.</p>
+          </div>
+        </section>
 
-            <div className="col-md-6 p-5 d-flex flex-column justify-content-center">
-              <h5 className="text-center text-brand mb-2">Welcome To EQPIMS</h5>
-              <h4 className="text-center mb-4">Login</h4>
-              {message && (
-                <div className="form-group">
-                  <div className="alert alert-danger" role="alert">
-                    {message}
-                  </div>
-                </div>
-              )}
-              <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleLoginSubmit}>
-                {({ errors, touched, handleChange, values }) => (
-                  <Form className="d-flex flex-column align-items-center">
-                    <div className="mb-3 w-75 position-relative">
+        {/* RIGHT — form panel */}
+        <section className="login-form-panel">
+          <div className="login-form-inner">
+            <h2 className="mb-3">Sign in</h2>
+
+
+            {message && (
+              <div className="login-alert" role="alert">
+                {message}
+              </div>
+            )}
+
+            <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleLoginSubmit}>
+              {({ errors, touched, handleChange, values }) => (
+                <Form className="login-form">
+                  <div className="field-group">
+                    <label htmlFor="username">Username</label>
+                    <div className="field-control">
                       <input
+                        id="username"
                         name="username"
                         type="text"
-                        className="form-control custom-input pe-5"
-                        placeholder="Username"
+                        autoComplete="username"
+                        placeholder="Enter your username"
                         value={values.username}
                         onChange={handleChange}
                       />
-                      <MdPerson className="input-icon-end" />
-                      {errors.username && touched.username && <div className="text-danger small text-start">{errors.username}</div>}
+                      <MdPerson className="field-icon" />
                     </div>
+                    {errors.username && touched.username && (
+                      <div className="field-error">{errors.username}</div>
+                    )}
+                  </div>
 
-                    <div className="mb-3 w-75 position-relative">
+                  <div className="field-group">
+                    <label htmlFor="password">Password</label>
+                    <div className="field-control">
                       <input
+                        id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
-                        className="form-control custom-input pe-5"
-                        placeholder="Password"
+                        autoComplete="current-password"
+                        placeholder="Enter your password"
                         value={values.password}
                         onChange={handleChange}
                       />
                       <span
-                        className="input-icon-end password-toggle"
+                        className="field-icon field-icon-toggle"
                         onClick={() => setShowPassword(!showPassword)}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? <MdVisibilityOff /> : <MdVisibility />}
                       </span>
-                      {errors.password && touched.password && <div className="text-danger small text-start">{errors.password}</div>}
                     </div>
+                    {errors.password && touched.password && (
+                      <div className="field-error">{errors.password}</div>
+                    )}
+                  </div>
 
-                    <div className="w-75 py-2">
-                      <button type="submit" className="btn bg-primary text-white custom-btn w-100">Login</button>
-                    </div>
-                  </Form>
-                )}
-              </Formik>
-            </div>
+                  <button type="submit" className="login-submit" disabled={loading}>
+                    {loading ? "Signing in…" : "Login"}
+                  </button>
+                </Form>
+              )}
+            </Formik>
           </div>
-        </div>
+        </section>
       </main>
 
-      <footer className="py-2 text-center text-white custom-header-bg">
+      <footer className="login-footer">
         <small>Website maintained by Vedant Tech Solutions</small>
       </footer>
     </div>

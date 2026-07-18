@@ -1,9 +1,17 @@
 import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
+import pdfFonts from "../../../src/assets/fonts/vfs_fonts";
 import { format } from "date-fns";
 
-
 pdfMake.vfs = pdfFonts.vfs;
+
+pdfMake.fonts = {
+    Arial: {
+        normal: "arial.ttf",
+        bold: "arialbd.ttf",
+        italics: "ariali.ttf",
+        bolditalics: "arialbi.ttf"
+    }
+};
 
 export const printEquipmentDownload = (data) => {
 
@@ -161,7 +169,12 @@ export const printEquipmentDownload = (data) => {
             tableStyle: {
                 margin: [0, 5, 0, 15]
             }
-        }
+        },
+
+        defaultStyle: {
+            fontSize: 10,
+            font: "Arial",
+        },
     };
 
     pdfMake.createPdf(docDefinition).open();

@@ -4,10 +4,11 @@ import { getEquipmentById, getEquipmentListService } from "../../services/master
 import { getFormDetailsList } from "../../services/admin.service"; // Imported for permission checks
 import EquipmentAddEditComponent from "./equipmentAddEditComponent";
 import "../datatable/master.css";
-import { FaDownload, FaEdit } from "react-icons/fa";
+import { FaDownload, FaEdit, FaEye } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Navbar from "../navbar/navbar";
 import { printEquipmentDownload } from "../print/equipmentPrint";
+import { Tooltip } from "react-tooltip";
 
 /* ─── match this to your formUrl value in DB for this page ─── */
 const FORM_URL = "equipment";
@@ -16,12 +17,13 @@ const Equipment = () => {
   const [equipmentList, setEquipmentList] = useState([]);
   const [status, setStatus] = useState('');
   const [equipmentId, setEquipmentId] = useState('');
+  const [openPopover, setOpenPopover] = useState(null);
 
   /* ================= PERMISSIONS STATE ================= */
   const [permissions, setPermissions] = useState({
-    forView:   false,
-    forAdd:    false,
-    forEdit:   false,
+    forView: false,
+    forAdd: false,
+    forEdit: false,
     forDelete: false,
   });
 
@@ -40,9 +42,9 @@ const Equipment = () => {
 
         if (match) {
           setPermissions({
-            forView:   match.forView   === true || match.forView   === 1 || match.forView   === "Y",
-            forAdd:    match.forAdd    === true || match.forAdd    === 1 || match.forAdd    === "Y",
-            forEdit:   match.forEdit   === true || match.forEdit   === 1 || match.forEdit   === "Y",
+            forView: match.forView === true || match.forView === 1 || match.forView === "Y",
+            forAdd: match.forAdd === true || match.forAdd === 1 || match.forAdd === "Y",
+            forEdit: match.forEdit === true || match.forEdit === 1 || match.forEdit === "Y",
             forDelete: match.forDelete === true || match.forDelete === 1 || match.forDelete === "Y",
           });
         }
@@ -60,13 +62,14 @@ const Equipment = () => {
     { name: "Name of Equipment", selector: (row) => row.equipmentName, sortable: true, align: 'text-start' },
     { name: "Serial No", selector: (row) => row.itemSerialNumber, sortable: true, align: 'text-center' },
     { name: "Present Location", selector: (row) => row.presentLocation, sortable: true, align: 'text-start' },
-    { name: "Project Code", selector: (row) => row.projectCode, sortable: true, align: 'text-center' },
+    { name: "Project", selector: (row) => row.projectCode, sortable: true, align: 'text-center' },
     { name: "Parent Location", selector: (row) => row.parentLocation, sortable: true, align: 'text-start' },
     { name: "SSRNo", selector: (row) => row.ssrNo, sortable: true, align: 'text-start' },
+    { name: "Specification", selector: (row) => row.specification, sortable: true, align: 'text-start' },
   ];
 
   /* Dynamic columns addition based on Edit permission or download availability */
-  const columns = permissions.forEdit 
+  const columns = permissions.forEdit
     ? [...baseColumns, { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' }]
     : baseColumns;
 
@@ -105,6 +108,16 @@ const Equipment = () => {
     }
   }, [permissions.forView]);
 
+  useEffect(() => {
+    const handleClick = () => setOpenPopover(null);
+
+    document.addEventListener("click", handleClick);
+
+    return () => {
+      document.removeEventListener("click", handleClick);
+    };
+  }, []);
+
   /* ================= TABLE DATA BUILDER ================= */
   const setTableData = (data) => {
     setEquipmentList(
@@ -116,6 +129,37 @@ const Equipment = () => {
         projectCode: item.projectCode ?? '-',
         parentLocation: item.parentLocation ?? '-',
         ssrNo: item.ssrNo ?? '-',
+        specification: (
+          <>
+            {item.specification
+              ? item.specification.length > 50
+                ? (
+                  <>
+                    {item.specification.substring(0, 50)}...
+
+                    <FaEye
+                      className="ms-2 text-primary"
+                      style={{
+                        cursor: "pointer",
+                      }}
+                      data-tooltip-id={`specification-tooltip-${item.equipmentId}`}
+                      data-tooltip-place="top"
+                    />
+
+                    <Tooltip
+                      id={`specification-tooltip-${item.equipmentId}`}
+                      className="custom-tooltip"
+                    >
+                      {item.specification}
+                    </Tooltip>
+                  </>
+                )
+                : item.specification
+              : "-"}
+          </>
+        ),
+
+
         action: (
           <>
             {/* Download button remains available to roles who can view */}
@@ -127,12 +171,12 @@ const Equipment = () => {
             >
               <FaDownload size={16} />
             </button>
-            
+
             {/* Edit button conditionally rendered by permission */}
             {permissions.forEdit && (
-              <button 
-                className="btn btn-warning btn-sm" 
-                onClick={() => item.equipmentId != null && editEquipment(item.equipmentId)} 
+              <button
+                className="btn btn-warning btn-sm"
+                onClick={() => item.equipmentId != null && editEquipment(item.equipmentId)}
                 title="Edit Equipment"
               >
                 <FaEdit size={16} />
@@ -168,7 +212,7 @@ const Equipment = () => {
       return <EquipmentAddEditComponent mode={'add'} setStatus={setStatus} refreshList={getEquipmentMasterList} />;
     case 'edit':
       return <EquipmentAddEditComponent mode={'edit'} equipmentId={equipmentId} setStatus={setStatus} refreshList={getEquipmentMasterList} />;
-    
+
     default:
       return (
         <div>
@@ -176,7 +220,7 @@ const Equipment = () => {
           <div className="card p-2">
             <div className="card-body text-center">
               <h3>Equipment List</h3>
-              
+
               <div id="card-body customized-card">
                 <Datatable columns={columns} data={equipmentList} />
               </div>

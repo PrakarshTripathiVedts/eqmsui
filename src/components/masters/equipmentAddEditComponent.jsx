@@ -43,7 +43,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
     equipmentName: "",
     remarks: "",
     ssrNo: "",
-    warranty:"",
+    warranty: "",
     procurementName: "",
     crvNo: "",
     crvDate: "",
@@ -54,7 +54,6 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
   const getDataById = async (equipmentId) => {
     try {
       const data = await getEquipmentById(equipmentId);
-      console.log("Fetched equipment data:", data);
       if (!data) return;
 
       setFormData(prev => ({
@@ -97,7 +96,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
   const getModelAndMakeAndEquipmentMasterList = async () => {
     try {
- 
+
 
       const employeeData = await getEmployeeListService();
       if (Array.isArray(employeeData) && employeeData.length > 0) {
@@ -127,7 +126,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
 
     } catch (err) {
       console.error("Failed to fetch model or make or equipment list:", err);
-      
+
       setEmployeeList([]);
       setProjectList([]);
       setSerialNumberList([]);
@@ -159,19 +158,24 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
     model: stringWithCommonRules("Model"),
     soNo: stringWithCommonRules("So Number"),
     soDate: stringWithCommonRules("So Date"),
-    ssrNo: stringWithCommonRules("SSR No"),
-
-photo: Yup.mixed()
-  .test("fileType", "Only PNG, JPG, and JPEG files are allowed.", (value) => {
-    if (!value) return true; // not required; remove this line if photo is mandatory
-    return ["image/png", "image/jpeg"].includes(value.type);
-  }),
     projectId: requiredField,
+    ssrNo: Yup.string().when("projectId", {
+      is: (projectId) => projectId !== 0,
+      then: () => stringWithCommonRules("SSR No"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+
+    photo: Yup.mixed()
+      .test("fileType", "Only PNG, JPG, and JPEG files are allowed.", (value) => {
+        if (!value) return true; // not required; remove this line if photo is mandatory
+        return ["image/png", "image/jpeg"].includes(value.type);
+      }),
+
     locationOfficer: requiredField,
-     warranty: requiredField,
-     procurementName: stringWithCommonRules("Procurement Name"),
-     crvNo: stringWithCommonRules("CRV No"),
-     crvDate: requiredField,
+    warranty: requiredField,
+    procurementName: stringWithCommonRules("Procurement Name"),
+    crvNo: stringWithCommonRules("CRV No"),
+    crvDate: requiredField,
     itemCost: Yup.number()
       .typeError("Item cost must be a number")
       .positive("Item cost must be greater than zero")
@@ -193,13 +197,11 @@ photo: Yup.mixed()
 
 
   const handleSubmit = async (values) => {
-    console.log("Form values on submit:", values);
     const dto = {
       ...values,
       soDate: format(new Date(values.soDate), "yyyy-MM-dd"),
       crvDate: format(new Date(values.crvDate), "yyyy-MM-dd"),
     }
-    console.log("DTO to submit:", dto); 
     try {
       if (mode === "add") {
         const confirmed = await showConfirmation();
@@ -328,7 +330,7 @@ photo: Yup.mixed()
                         </div>
                       </div>
 
-                       <div className="col-md-3">
+                      <div className="col-md-3">
                         <div className="form-group">
                           <label htmlFor="procurementName" className="text-start d-block">Procurement Name: <span className="text-danger">*</span></label>
                           <Field
@@ -463,7 +465,7 @@ photo: Yup.mixed()
                         </div>
                       </div>
 
-                      
+
 
                       <div className="col-md-3">
                         <div className="form-group">
@@ -509,12 +511,12 @@ photo: Yup.mixed()
                           <ErrorMessage name="presentLocation" component="div" className="text-danger text-start" />
                         </div>
                       </div>
-                      
+
 
                       <div className="col-md-3">
                         <div className="form-group">
                           <label htmlFor="photo" className="text-start d-block">Photo Upload :
-                            {mode === 'edit' && values.photoName &&(
+                            {mode === 'edit' && values.photoName && (
                               <button
                                 type="button"
                                 className="btn btn-sm btn-outline-success"
@@ -540,7 +542,7 @@ photo: Yup.mixed()
                       <div className="col-md-3">
                         <div className="form-group">
                           <label htmlFor="file" className="text-start d-block">File Upload : &nbsp;
-                            {mode === 'edit' && values.fileName &&(
+                            {mode === 'edit' && values.fileName && (
                               <button
                                 type="button"
                                 className="btn btn-sm btn-outline-success"
@@ -560,15 +562,16 @@ photo: Yup.mixed()
                           <ErrorMessage name="file" component="div" className="text-danger text-start" />
                         </div>
                       </div>
+                      {values?.projectId === 0 &&
+                        <div className="col-md-3">
+                          <div className="form-group">
+                            <label htmlFor="ssrNo" className="text-start d-block">SSR Number : <span className="text-danger">*</span></label>
+                            <Field type="text" name="ssrNo" className="form-control mb-2" placeholder="Enter SSR Number" />
 
-                      <div className="col-md-3">
-                        <div className="form-group">
-                          <label htmlFor="ssrNo" className="text-start d-block">SSR Number: <span className="text-danger">*</span></label>
-                          <Field type="text" name="ssrNo" className="form-control mb-2" placeholder="Enter SSR Number" />
-
-                          <ErrorMessage name="ssrNo" component="div" className="text-danger text-start" />
+                            <ErrorMessage name="ssrNo" component="div" className="text-danger text-start" />
+                          </div>
                         </div>
-                      </div>
+                      }
 
                       <div className="col-md-3">
                         <div className="form-group">
@@ -589,7 +592,7 @@ photo: Yup.mixed()
                       </div>
 
 
-                       {/* <div className="col-md-3">
+                      {/* <div className="col-md-3">
                         <div className="form-group">
                           <label htmlFor="calibrationAgency" className="text-start d-block">Calibration Agency :  <span className="text-danger">*</span></label>
                           <Field
@@ -699,7 +702,7 @@ photo: Yup.mixed()
                           <ErrorMessage name="crvDate" component="div" className="text-danger text-start" />
                         </div>
                       </div>
-                      
+
                       <div className="col-md-6">
                         <div className="form-group">
                           <label htmlFor="specification" className="text-start d-block">Specification : <span className="text-danger">*</span></label>
@@ -732,7 +735,7 @@ photo: Yup.mixed()
                           <ErrorMessage name="amc" component="div" className="text-danger text-start" />
                         </div>
                       </div> */}
-                         
+
                     </div>
                     <div align="center">
                       <button type="submit" className={`btn ${mode === "add" ? "submit" : "edit"} mt-3`} >

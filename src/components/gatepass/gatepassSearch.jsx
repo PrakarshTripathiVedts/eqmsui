@@ -208,7 +208,7 @@ const GatepassSearch = () => {
                 >
                   <table
                     className="table table-sm table-bordered table-hover mb-0 align-middle text-center"
-                    style={{ fontSize: "0.83rem" }}
+                    style={{ fontSize: "1rem" }}
                   >
                     <thead
                       style={{

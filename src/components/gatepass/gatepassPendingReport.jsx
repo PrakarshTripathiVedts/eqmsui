@@ -14,7 +14,7 @@ import * as XLSX from "xlsx-js-style";
 
 // ── constants ──────────────────────────────────────────────────────────────
 const CATEGORY_OPTIONS = [
-  { value: "All",  label: "All Categories" },
+  { value: "All", label: "All Categories" },
   { value: "RMGP", label: "RMGP" },
   { value: "TSGP", label: "TSGP" },
 ];
@@ -22,23 +22,25 @@ const CATEGORY_OPTIONS = [
 // Only pending statuses
 const PENDING_STATUSES = ["O", "P"];
 
+// Only these two categories are ever shown in this report
+const PENDING_CATEGORIES = ["RMGP", "TSGP"];
+
 const STATUS_LABEL = { O: "OUT", P: "Partially In" };
 const STATUS_BADGE = { O: "bg-danger", P: "bg-warning text-dark" };
 
 const fmtDate = (val) => (val ? format(new Date(val), "dd-MM-yyyy") : "-");
-const isPdf   = (fn)  => fn?.toLowerCase().endsWith(".pdf");
+const isPdf = (fn) => fn?.toLowerCase().endsWith(".pdf");
 
 // ── component ──────────────────────────────────────────────────────────────
 const GatepassPendingReport = () => {
-  const [rawData,        setRawData]        = useState([]);
-  const [projectList,    setProjectList]    = useState([]);
+  const [rawData, setRawData] = useState([]);
+  const [projectList, setProjectList] = useState([]);
   const [filterCategory, setFilterCategory] = useState("All");
-  const [filterProject,  setFilterProject]  = useState(null);
-  const [isLoading,      setIsLoading]      = useState(false);
+  const [filterProject, setFilterProject] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { openAttachment, loading: attachmentLoading } = useGatepassAttachment();
 
-  // ── load data ────────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
@@ -47,9 +49,11 @@ const GatepassPendingReport = () => {
           getGatepassList(),
           getProjectListService(),
         ]);
-        // keep only pending statuses at source
+        // keep only RMGP/TSGP categories AND pending statuses at source
         const pending = (Array.isArray(gpData) ? gpData : []).filter(
-          (item) => PENDING_STATUSES.includes(item.itemStatus)
+          (item) =>
+            PENDING_STATUSES.includes(item.itemStatus) &&
+            PENDING_CATEGORIES.includes(item.category)
         );
         setRawData(pending);
         setProjectList(Array.isArray(prData) ? prData : []);
@@ -66,7 +70,7 @@ const GatepassPendingReport = () => {
   const filteredData = useMemo(() => {
     return rawData.filter((item) => {
       const matchCategory = filterCategory === "All" || item.category === filterCategory;
-      const matchProject  = !filterProject  || item.projectId === filterProject.value;
+      const matchProject = !filterProject || item.projectId === filterProject.value;
       return matchCategory && matchProject;
     });
   }, [rawData, filterCategory, filterProject]);
@@ -80,14 +84,20 @@ const GatepassPendingReport = () => {
   const isFiltered = filterCategory !== "All" || filterProject !== null;
 
   // ── project lookup ────────────────────────────────────────────────────────
-  const getProjectName = (projectId) =>
-    projectList.find((p) => p.projectId === projectId)?.projectShortName ?? "-";
+  const getProjectName = (projectId) => {
+    const project = projectList.find((p) => p.projectId === projectId);
+
+    return project
+      ? `${project.projectCode ?? "-"}${project.projectShortName ? ` (${project.projectShortName})` : ""}`
+      : "-";
+  };
+
 
   // ── shared report meta ───────────────────────────────────────────────────
   const reportMeta = {
-    category:     filterCategory !== "All" ? filterCategory : "All Categories",
-    project:      filterProject  ? filterProject.label : "All Projects",
-    generatedAt:  format(new Date(), "dd-MM-yyyy HH:mm"),
+    category: filterCategory !== "All" ? filterCategory : "All Categories",
+    project: filterProject ? filterProject.label : "All Projects",
+    generatedAt: format(new Date(), "dd-MM-yyyy HH:mm"),
     totalRecords: filteredData.length,
   };
 
@@ -99,11 +109,11 @@ const GatepassPendingReport = () => {
 
   const tableRows = filteredData.map((item, idx) => [
     idx + 1,
-    item.gatepassNo               ?? "-",
+    item.gatepassNo ?? "-",
     fmtDate(item.gatepassDate),
-    item.category                 ?? "-",
+    item.category ?? "-",
     getProjectName(item.projectId),
-    item.destination              ?? "-",
+    item.destination ?? "-",
     fmtDate(item.outDate),
     fmtDate(item.probableReturnDate),
     STATUS_LABEL[item.itemStatus] ?? item.itemStatus ?? "-",
@@ -111,10 +121,10 @@ const GatepassPendingReport = () => {
 
   // ── PDF export ────────────────────────────────────────────────────────────
   const downloadPDF = () => {
-    const doc       = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
-    const margin    = 14;
-    const usableW   = pageWidth - margin * 2;
+    const margin = 14;
+    const usableW = pageWidth - margin * 2;
 
     // Title
     doc.setFontSize(16);
@@ -163,23 +173,23 @@ const GatepassPendingReport = () => {
       },
       alternateRowStyles: { fillColor: [255, 245, 245] },
       columnStyles: {
-        0: { halign: "center", cellWidth: 10  },  // SN
-        1: { halign: "center", cellWidth: 28  },  // Gatepass No
-        2: { halign: "center", cellWidth: 26  },  // Gatepass Date
-        3: { halign: "center", cellWidth: 22  },  // Category
-        4: { halign: "left",   cellWidth: 54  },  // Project
-        5: { halign: "left",   cellWidth: 42  },  // Destination
-        6: { halign: "center", cellWidth: 24  },  // Out Date
-        7: { halign: "center", cellWidth: 28  },  // Probable Return
-        8: { halign: "center", cellWidth: 24  },  // Item Status
+        0: { halign: "center", cellWidth: 10 },  // SN
+        1: { halign: "center", cellWidth: 28 },  // Gatepass No
+        2: { halign: "center", cellWidth: 26 },  // Gatepass Date
+        3: { halign: "center", cellWidth: 22 },  // Category
+        4: { halign: "left", cellWidth: 54 },  // Project
+        5: { halign: "left", cellWidth: 42 },  // Destination
+        6: { halign: "center", cellWidth: 24 },  // Out Date
+        7: { halign: "center", cellWidth: 28 },  // Probable Return
+        8: { halign: "center", cellWidth: 24 },  // Item Status
         // Total: 10+28+26+22+54+42+24+28+24 = 258 < 269 ✓
       },
       margin: { left: margin, right: margin },
       tableWidth: usableW,
       didDrawPage: (data) => {
-        const pageCount  = doc.internal.getNumberOfPages();
+        const pageCount = doc.internal.getNumberOfPages();
         const pageHeight = doc.internal.pageSize.getHeight();
-        const footerY    = pageHeight - 8;
+        const footerY = pageHeight - 8;
 
         doc.setFontSize(7);
         doc.setTextColor(150);
@@ -219,11 +229,11 @@ const GatepassPendingReport = () => {
       ...tableRows,
     ];
 
-    const ws       = XLSX.utils.aoa_to_sheet(titleBlock);
+    const ws = XLSX.utils.aoa_to_sheet(titleBlock);
     const colCount = tableColumns.length - 1;
 
     ws["!cols"] = [
-      { wch: 5  }, { wch: 16 }, { wch: 14 }, { wch: 12 },
+      { wch: 5 }, { wch: 16 }, { wch: 14 }, { wch: 12 },
       { wch: 30 }, { wch: 28 }, { wch: 14 }, { wch: 18 }, { wch: 14 },
     ];
 
@@ -259,7 +269,7 @@ const GatepassPendingReport = () => {
 
     ws["!rows"] = [
       { hpt: 28 }, { hpt: 18 }, { hpt: 18 },
-      { hpt: 6  }, { hpt: 20 },
+      { hpt: 6 }, { hpt: 20 },
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, "Pending Gatepasses");
@@ -268,8 +278,8 @@ const GatepassPendingReport = () => {
 
   // ── project options ───────────────────────────────────────────────────────
   const projectOptions = [
-    { value: null, label: "All Projects" },
-    ...projectList.map((p) => ({ value: p.projectId, label: p.projectCode+ " - "+p.projectShortName })),
+    { value: -1, label: "All Projects" },
+    ...projectList.map(p => ({ value: p.projectId, label: p.projectCode + " - " + p.projectShortName })),
   ];
 
   // ── counts for category pills ─────────────────────────────────────────────
@@ -308,7 +318,7 @@ const GatepassPendingReport = () => {
                 <div className="d-flex flex-wrap gap-2">
                   {CATEGORY_OPTIONS.map((cat) => {
                     const active = filterCategory === cat.value;
-                    const cnt    = countFor(cat.value);
+                    const cnt = countFor(cat.value);
                     return (
                       <label
                         key={cat.value}
@@ -365,11 +375,11 @@ const GatepassPendingReport = () => {
                 <Select
                   options={projectOptions}
                   value={filterProject || projectOptions[0]}
-                  onChange={(opt) => setFilterProject(opt?.value ? opt : null)}
+                  onChange={opt => setFilterProject(opt && opt.value !== -1 ? opt : null)}
                   placeholder="All Projects"
                   isClearable={false}
                   menuPortalTarget={document.body}
-                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                  styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
                 />
               </div>
 
@@ -432,7 +442,7 @@ const GatepassPendingReport = () => {
                   <>
                     {filteredData.length} pending record{filteredData.length !== 1 ? "s" : ""}
                     {filterCategory !== "All" && <> · <strong>{filterCategory}</strong></>}
-                    {filterProject            && <> · <strong>{filterProject.label}</strong></>}
+                    {filterProject && <> · <strong>{filterProject.label}</strong></>}
                   </>
                 )}
               </span>
@@ -446,7 +456,7 @@ const GatepassPendingReport = () => {
           >
             <table
               className="table table-sm table-bordered table-hover mb-0 text-center align-middle"
-              style={{ fontSize: "0.83rem" }}
+              style={{ fontSize: "1rem" }}
             >
               <thead
                 style={{
@@ -516,7 +526,7 @@ const GatepassPendingReport = () => {
                             style={{
                               fontSize: "11px",
                               border: isPdf(item.filename) ? "1px solid #1e3a8a" : "1px solid #16a34a",
-                              color:  isPdf(item.filename) ? "#1e3a8a"           : "#16a34a",
+                              color: isPdf(item.filename) ? "#1e3a8a" : "#16a34a",
                               background: "#fff",
                               borderRadius: 5,
                               display: "inline-flex",

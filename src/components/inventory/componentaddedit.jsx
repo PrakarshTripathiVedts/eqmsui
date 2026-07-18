@@ -93,6 +93,8 @@ const ComponentAddEdit = ({ mode, componentId, setStatus, refreshList }) => {
         balQtyDate:     data.balQtyDate     ? new Date(data.balQtyDate) : null,
         personIncharge: data.personIncharge ?? "",
         remarks:        data.remarks        ?? "",
+        latestBalQty:   data.latestBalQty   ?? "",
+        latestQtyDate:  data.latestQtyDate  ? new Date(data.latestQtyDate) : null,
       });
     } catch (err) {
       console.error("Failed to fetch component data:", err);
@@ -425,13 +427,21 @@ const ComponentAddEdit = ({ mode, componentId, setStatus, refreshList }) => {
                       <div className="col-md-4">
                         <div className="form-group">
                           <label className="text-start d-block">Latest Qty Date:</label>
-                          <Field
-                            type="text"
-                            name="latestQtyDate"
-                            className="form-control mb-2"
-                            readOnly
-                            style={{ background: "#f8f9fa", cursor: "not-allowed", color: "#6c757d" }}
-                          />
+                          
+                          <DatePicker
+                        selected={values.latestQtyDate}
+                        onChange={date => setFieldValue("latestQtyDate", date)}
+                        dateFormat="dd-MM-yyyy"
+                        placeholderText="DD-MM-YYYY"
+                        className="form-control mb-2"
+                        maxDate={new Date()}
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                        autoComplete="off"
+                        readOnly
+                        style={{ background: "#f8f9fa", cursor: "not-allowed", color: "#6c757d" }}
+                      />
                           <small className="text-muted d-block text-start">
                             Updated automatically on stock transactions
                           </small>

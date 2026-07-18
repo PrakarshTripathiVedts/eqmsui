@@ -6,9 +6,12 @@ import { getAmcMasterListById, getEquipmentListService } from "../../services/ma
 import { getFormDetailsList } from "../../services/admin.service"; // Imported for permission checks
 import Select from "react-select";
 import CalibrationAddEditComponent from "./calibrationAddEditComponent";
-import { FaEdit } from "react-icons/fa";
+import { FaDownload, FaEdit } from "react-icons/fa";
 import { format } from "date-fns";
 import AmcAddEditComponent from "./amcAddEditComponent";
+import { Tooltip } from "react-tooltip";
+import { generateCalibrationPdf } from "./calibrationPrint";
+import { generateAmcPdf } from "./amcPrint";
 
 /* ─── match this to your formUrl value in DB for this page ─── */
 const FORM_URL = "amc";
@@ -27,9 +30,9 @@ const AMCComponent = ({ selectedEquipmentId, selectedEquipmentName }) => {
 
   /* ================= PERMISSIONS STATE ================= */
   const [permissions, setPermissions] = useState({
-    forView:   false,
-    forAdd:    false,
-    forEdit:   false,
+    forView: false,
+    forAdd: false,
+    forEdit: false,
     forDelete: false,
   });
 
@@ -48,9 +51,9 @@ const AMCComponent = ({ selectedEquipmentId, selectedEquipmentName }) => {
 
         if (match) {
           setPermissions({
-            forView:   match.forView   === true || match.forView   === 1 || match.forView   === "Y",
-            forAdd:    match.forAdd    === true || match.forAdd    === 1 || match.forAdd    === "Y",
-            forEdit:   match.forEdit   === true || match.forEdit   === 1 || match.forEdit   === "Y",
+            forView: match.forView === true || match.forView === 1 || match.forView === "Y",
+            forAdd: match.forAdd === true || match.forAdd === 1 || match.forAdd === "Y",
+            forEdit: match.forEdit === true || match.forEdit === 1 || match.forEdit === "Y",
             forDelete: match.forDelete === true || match.forDelete === 1 || match.forDelete === "Y",
           });
         }
@@ -64,12 +67,12 @@ const AMCComponent = ({ selectedEquipmentId, selectedEquipmentName }) => {
 
   /* ================= BASE COLUMNS ================= */
   const baseColumns = [
-  { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-  { name: "Agency", selector: (row) => row.agency, sortable: true, align: 'text-start'},
-  { name: "AMC Start Date", selector: (row) => row.amcDate, sortable: true, align: 'text-center' },
-  { name: "AMC End Date", selector: (row) => row.amcEndDate, sortable: true, align: 'text-center' },
-  { name: "Revision", selector: (row) => row.revision, sortable: true, align: 'text-center' },  // ← ADD
-];
+    { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
+    { name: "Agency", selector: (row) => row.agency, sortable: true, align: 'text-start' },
+    { name: "AMC Start Date", selector: (row) => row.amcDate, sortable: true, align: 'text-center' },
+    { name: "AMC End Date", selector: (row) => row.amcEndDate, sortable: true, align: 'text-center' },
+    { name: "Revision", selector: (row) => row.revision, sortable: true, align: 'text-center' },  // ← ADD
+  ];
 
   /* Dynamic columns addition based on Edit permission */
   const columns = permissions.forEdit
@@ -99,15 +102,15 @@ const AMCComponent = ({ selectedEquipmentId, selectedEquipmentName }) => {
   }, [equipmentValue, permissions.forView]);
 
   useEffect(() => {
-   if (equipmentList.length > 0) {
-    const targetId = selectedEquipmentId || equipmentList[0].equipmentId;
-    const matched = equipmentList.find(e => e.equipmentId === Number(targetId) || e.equipmentId === targetId);
-    if (matched) {
-      setEquipmentValue(matched.equipmentId);
-      setEquipmentName(matched.equipmentName);
-      setEquipment(matched);
+    if (equipmentList.length > 0) {
+      const targetId = selectedEquipmentId || equipmentList[0].equipmentId;
+      const matched = equipmentList.find(e => e.equipmentId === Number(targetId) || e.equipmentId === targetId);
+      if (matched) {
+        setEquipmentValue(matched.equipmentId);
+        setEquipmentName(matched.equipmentName);
+        setEquipment(matched);
+      }
     }
-  }
   }, [equipmentList, selectedEquipmentId, selectedEquipmentName]);
 
   const getEquipmentMasterList = async () => {
@@ -125,27 +128,27 @@ const AMCComponent = ({ selectedEquipmentId, selectedEquipmentName }) => {
     }
   };
 
- const equipmentOptions = equipmentList.map(equip => ({
-  value: equip.equipmentId,
-  label: equip.equipmentName,
-  data: equip,
-}));
+  const equipmentOptions = equipmentList.map(equip => ({
+    value: equip.equipmentId,
+    label: equip.equipmentName,
+    data: equip,
+  }));
 
   const handleEquipChange = (data) => {
-  setEquipmentValue(data?.value);
-  setEquipmentName(data?.label);
-  setEquipment(data?.data);
-};
+    setEquipmentValue(data?.value);
+    setEquipmentName(data?.label);
+    setEquipment(data?.data);
+  };
 
   const fetchAmcMasterListById = async (equipmentValue) => {
     try {
       const data = await getAmcMasterListById(equipmentValue);
       if (!data) return;
       if (Array.isArray(data) && data.length > 0) {
-        setHasAmc(true); 
+        setHasAmc(true);
         setTableData(data);
       } else {
-        setHasAmc(false); 
+        setHasAmc(false);
         setTableData([]);
       }
     } catch (err) {
@@ -154,35 +157,54 @@ const AMCComponent = ({ selectedEquipmentId, selectedEquipmentName }) => {
     }
   };
 
- const setTableData = (data) => {
-  const sortedData = [...data].sort(
-    (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
-  );
-  setLatestDueDate(sortedData[0]?.amcEndDate ?? '');
-  setLatestAmcStartDate(sortedData[0]?.amcStartDate ?? '');  // ← ADD
-  setAmcList(
-    sortedData.map((item, index) => ({
-      sn: index + 1 + '.',
-      agency: item.amcAgency ?? '-',
-      amcDate: item.amcStartDate ? format(new Date(item.amcStartDate), "dd-MM-yyyy") : '-',
-      amcEndDate: item.amcEndDate ? format(new Date(item.amcEndDate), "dd-MM-yyyy") : '-',
-      revision: item.revision ?? 0,
-      action: permissions.forEdit ? (
-        <>
-          {index === 0 && item.amcId && (
-            <button
-              className="btn btn-warning btn-sm"
-              onClick={() => item.amcId != null && editAmc(item.amcId)}
-              title="Edit AMC"
-            >
-              <FaEdit size={16} />
-            </button>
-          )}
-        </>
-      ) : '-',
-    }))
-  );
-};
+  const handlePrint = (item) => {
+
+    generateAmcPdf(item, equipment)
+  };
+
+  const setTableData = (data) => {
+    const sortedData = [...data].sort(
+      (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
+    );
+    setLatestDueDate(sortedData[0]?.amcEndDate ?? '');
+    setLatestAmcStartDate(sortedData[0]?.amcStartDate ?? '');  // ← ADD
+    setAmcList(
+      sortedData.map((item, index) => ({
+        sn: index + 1 + '.',
+        agency: item.amcAgency ?? '-',
+        amcDate: item.amcStartDate ? format(new Date(item.amcStartDate), "dd-MM-yyyy") : '-',
+        amcEndDate: item.amcEndDate ? format(new Date(item.amcEndDate), "dd-MM-yyyy") : '-',
+        revision: item.revision ?? 0,
+        action: permissions.forEdit ? (
+          <>
+            {index === 0 && item.amcId && (
+              <>
+                <button className="btn btn-outline-success btn-sm me-3"
+                  data-tooltip-id="Tooltip"
+                  data-tooltip-content="Print"
+                  data-tooltip-place="top"
+                  onClick={() => handlePrint(item)}
+                >
+                  <FaDownload />
+                </button>
+                <button
+                  className="btn btn-warning btn-sm"
+                  onClick={() => item.amcId != null && editAmc(item.amcId)}
+                  data-tooltip-id="Tooltip"
+                  data-tooltip-content="Edit"
+                  data-tooltip-place="top"
+                >
+                  <FaEdit size={16} />
+                </button>
+                <Tooltip id="Tooltip" className='text-white tooltipName' />
+
+              </>
+            )}
+          </>
+        ) : '-',
+      }))
+    );
+  };
 
   /* ================= NO VIEW PERMISSION SCREEN ================= */
   if (!permissions.forView) {
@@ -204,29 +226,29 @@ const AMCComponent = ({ selectedEquipmentId, selectedEquipmentName }) => {
 
   /* ================= SUB-ROUTING WORKFLOWS ================= */
   switch (status) {
-  case 'add':
-  return <AmcAddEditComponent 
-    mode={'add'} 
-    equipmentValue={equipmentValue} 
-    equipmentName={equipmentName} 
-    setStatus={setStatus} 
-    latestDueDate={latestDueDate}
-    latestAmcStartDate={latestAmcStartDate}
-    hasAmc={hasAmc} 
-    equipment={equipment}
-    amcHistory={amcList}          // ← ADD THIS
-    refreshList={() => fetchAmcMasterListById(equipmentValue)} 
-  />;
-case 'edit':
-  return <AmcAddEditComponent 
-    mode={'edit'} 
-    amcId={amcId} 
-    equipmentName={equipmentName} 
-    setStatus={setStatus} 
-    equipment={equipment}
-    refreshList={() => fetchAmcMasterListById(equipmentValue)} 
-  />;
-    
+    case 'add':
+      return <AmcAddEditComponent
+        mode={'add'}
+        equipmentValue={equipmentValue}
+        equipmentName={equipmentName}
+        setStatus={setStatus}
+        latestDueDate={latestDueDate}
+        latestAmcStartDate={latestAmcStartDate}
+        hasAmc={hasAmc}
+        equipment={equipment}
+        amcHistory={amcList}          // ← ADD THIS
+        refreshList={() => fetchAmcMasterListById(equipmentValue)}
+      />;
+    case 'edit':
+      return <AmcAddEditComponent
+        mode={'edit'}
+        amcId={amcId}
+        equipmentName={equipmentName}
+        setStatus={setStatus}
+        equipment={equipment}
+        refreshList={() => fetchAmcMasterListById(equipmentValue)}
+      />;
+
     default:
       return (
         <div>

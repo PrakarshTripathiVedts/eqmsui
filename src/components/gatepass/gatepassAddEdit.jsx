@@ -28,6 +28,7 @@ const GatePassAddEdit = ({ mode, gatepassId, setStatus, refreshList }) => {
   const [gatepassNoError, setGatepassNoError] = useState("");
   const [isCheckingNo, setIsCheckingNo] = useState(false);
   const { openAttachment, loading: attachmentLoading } = useGatepassAttachment();
+  const filSize = localStorage.getItem('filSize'); // Default to 25 MB if not set
 
   const [formData, setFormData] = useState({
     gatepassId: "",
@@ -125,6 +126,10 @@ const GatePassAddEdit = ({ mode, gatepassId, setStatus, refreshList }) => {
   });
 
   const handleSubmit = async (values) => {
+    if (values.remarks && values.remarks.length > 1000) {
+    showAlert("Warning", "Remarks cannot exceed 1000 characters.", "warning");
+    return; // Stop submission
+  }
     try {
       const confirmed = await showConfirmation();
       if (!confirmed) return;
@@ -241,69 +246,58 @@ const GatePassAddEdit = ({ mode, gatepassId, setStatus, refreshList }) => {
 
                   <div className="row">
 
-{/* ── Gatepass No ── */}
-<div className="col-md-4">
-  <div className="form-group">
-    <label className="text-start d-block">
-      Gatepass No: <span className="text-danger">*</span>
-    </label>
+                    {/* ── Gatepass No ── */}
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label className="text-start d-block">
+                          Gatepass No: <span className="text-danger">*</span>
+                        </label>
 
-    <div style={{ position: "relative" }}>
-      <Field name="gatepassNo">
-        {({ field, form }) => (
-          <input
-            {...field}
-            type="text"
-            placeholder="Enter Gatepass No"
-            className={`form-control mb-1 ${gatepassNoError ? "is-invalid" : ""}`}
-            onChange={(e) => {
-              field.onChange(e);               {/* ← Formik's own onChange — keeps value updating */}
-              if (gatepassNoError) setGatepassNoError("");  {/* ← clears duplicate error */}
-            }}
-            onBlur={async (e) => {
-              field.onBlur(e);                 {/* ← Formik's own onBlur — marks field touched */}
-              const val = e.target.value.trim();
-              if (!val || mode === "edit") return;
-              setIsCheckingNo(true);
-              setGatepassNoError("");
-              try {
-                const exists = await checkGatepassNoExists(val);
-                if (exists) {
-                  setGatepassNoError(`Gatepass No "${val}" already exists.`);
-                }
-              } catch {
-                // silent — backend will catch it anyway
-              } finally {
-                setIsCheckingNo(false);
-              }
-            }}
-          />
-        )}
-      </Field>
+                        <div style={{ position: "relative" }}>
+                          <Field name="gatepassNo">
+                            {({ field, form }) => (
+                              <input
+                                {...field}
+                                type="text"
+                                placeholder="Enter Gatepass No"
+                                className={`form-control mb-1 ${gatepassNoError ? "is-invalid" : ""}`}
+                                onChange={(e) => {
+                                  field.onChange(e); {/* ← Formik's own onChange — keeps value updating */ }
+                                  if (gatepassNoError) setGatepassNoError(""); {/* ← clears duplicate error */ }
+                                }}
+                                onBlur={async (e) => {
+                                  field.onBlur(e); {/* ← Formik's own onBlur — marks field touched */ }
+                                  const val = e.target.value.trim();
+                                  if (!val || mode === "edit") return;
+                                  setIsCheckingNo(true);
+                                  setGatepassNoError("");
+                                  try {
+                                    const exists = await checkGatepassNoExists(val);
+                                    if (exists) {
+                                      setGatepassNoError(`Gatepass No "${val}" already exists.`);
+                                    }
+                                  } catch {
+                                    // silent — backend will catch it anyway
+                                  } finally {
+                                    setIsCheckingNo(false);
+                                  }
+                                }}
+                              />
+                            )}
+                          </Field>
+                        </div>
 
-      {/* inline spinner while checking */}
-      {isCheckingNo && (
-        <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-60%)" }}>
-          <span
-            className="spinner-border spinner-border-sm text-primary"
-            role="status"
-            style={{ width: 14, height: 14, borderWidth: 2 }}
-          />
-        </span>
-      )}
-    </div>
+                        {/* Yup required error */}
+                        <ErrorMessage name="gatepassNo" component="div" className="text-danger text-start" style={{ fontSize: "0.82rem" }} />
 
-    {/* Yup required error */}
-    <ErrorMessage name="gatepassNo" component="div" className="text-danger text-start" style={{ fontSize: "0.82rem" }} />
-
-    {/* duplicate error */}
-    {gatepassNoError && (
-      <div className="text-danger text-start" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
-        ⚠ {gatepassNoError}
-      </div>
-    )}
-  </div>
-</div>
+                        {/* duplicate error */}
+                        {gatepassNoError && (
+                          <div className="text-danger text-start" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
+                            ⚠ {gatepassNoError}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     {/* ── Gatepass Date ── */}
                     <div className="col-md-4">
                       <div className="form-group">
@@ -387,6 +381,7 @@ const GatePassAddEdit = ({ mode, gatepassId, setStatus, refreshList }) => {
                       </div>
                     )}
 
+                    {/* ── Upload File ── */}
                     <div className="col-md-4">
                       <div className="form-group">
                         <label className="text-start d-block">Upload File:</label>
@@ -440,11 +435,28 @@ const GatePassAddEdit = ({ mode, gatepassId, setStatus, refreshList }) => {
                         <input
                           type="file"
                           className="form-control mb-2"
-                          onChange={(e) => setSelectedFile(e.target.files[0] || null)}
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              // Check if file size exceeds the allowed limit
+                              if (file.size > filSize) {
+                                const maxMb = (filSize / (1024 * 1024)).toFixed(0);
+                                showAlert("Error", `File size cannot exceed ${maxMb} MB.`, "error");
+                                e.target.value = ""; // Reset file input UI
+                                setSelectedFile(null); // Clear selected file state
+                                return;
+                              }
+                              setSelectedFile(file);
+                            } else {
+                              setSelectedFile(null);
+                            }
+                          }}
                         />
 
                         {mode === "edit" && existingFilename && (
-                          <small className="text-muted">Uploading a new file will replace the existing one.</small>
+                          <small className="text-muted text-start d-block">
+                            Uploading a new file will replace the existing one.
+                          </small>
                         )}
                       </div>
                     </div>
@@ -460,7 +472,10 @@ const GatePassAddEdit = ({ mode, gatepassId, setStatus, refreshList }) => {
                           placeholder="Enter remarks (optional)"
                           rows={3}
                           style={{ resize: "vertical" }}
+                          maxLength={1000} // Keeps user from typing past 1000
                         />
+                        {/* Add this line below to show the Yup validation message */}
+                        <ErrorMessage name="remarks" component="div" className="text-danger text-start" />
                       </div>
                     </div>
 

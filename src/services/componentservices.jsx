@@ -83,7 +83,6 @@ export const getComponentMasterListById = async (componentid) => {
 
 export const saveComponentDetailsData = async (data) => {
 
-  console.log("data************",data);
   try {
     
     const response = await axios.post(`${API_URL}api/componentdetails`, data, {

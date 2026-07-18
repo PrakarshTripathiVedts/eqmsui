@@ -16,6 +16,7 @@ import {
 } from "../../services/gatepass.service";
 import { showAlert, showConfirmation } from "../datatable/swalHelper";
 import useGatepassAttachment from "./useGatepassAttachment";
+import useGatepassInAttachment from "./useGatepassInAttachment";
 
 const FORM_URL = "gatepassentry";
 
@@ -48,9 +49,12 @@ const GatePassEntry = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingInId, setEditingInId] = useState(null);
   const [inlineRemarks, setInlineRemarks] = useState('');
+  const [selGatepassNo, setSelGatepassNo] = useState('');
   const [isInlineSubmitting, setIsInlineSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const { openAttachment, loading: attachmentLoading } = useGatepassAttachment();
+  const { openGatepassInAttachment, loading: gatepassInAttachmentLoading } = useGatepassInAttachment();
+  
 
   const [permissions, setPermissions] = useState({
     forView: false, forAdd: false, forEdit: false, forDelete: false,
@@ -93,19 +97,28 @@ const GatePassEntry = () => {
   };
 
   // ── Apply filters whenever rawData or filter values change ─────────────────
+ // ── Apply filters whenever rawData or filter values change ─────────────────
   const filteredData = useMemo(() => {
     return rawData.filter(item => {
       const matchCategory =
         filterCategory === "All" || item.category === filterCategory;
 
       const itemDate = item.outDate ? new Date(item.outDate) : null;
-      const matchFrom = !filterFromDate || (itemDate && itemDate >= filterFromDate);
-      const matchTo = !filterToDate || (itemDate && itemDate <= filterToDate);
+      
+      // 1. Normalize From Date to the very start of the day
+      const fromDateBound = filterFromDate ? new Date(filterFromDate) : null;
+      fromDateBound?.setHours(0, 0, 0, 0);
+
+      // 2. Normalize To Date to the very end of the day
+      const toDateBound = filterToDate ? new Date(filterToDate) : null;
+      toDateBound?.setHours(23, 59, 59, 999);
+
+      const matchFrom = !fromDateBound || (itemDate && itemDate >= fromDateBound);
+      const matchTo = !toDateBound || (itemDate && itemDate <= toDateBound);
 
       return matchCategory && matchFrom && matchTo;
     });
   }, [rawData, filterCategory, filterFromDate, filterToDate]);
-
   // ── Re-build table rows whenever filteredData changes ─────────────────────
   useEffect(() => {
     setTableData(filteredData);
@@ -155,6 +168,7 @@ const GatePassEntry = () => {
     setInlineRemarks('');
     setShowInModal(true);
     fetchInboundHistory(item.gatepassId);
+    setSelGatepassNo(item.gatepassNo || '');
   };
 
   const handleInSubmit = async (e) => {
@@ -479,7 +493,7 @@ const GatePassEntry = () => {
               <div className="modal-dialog modal-xl modal-dialog-scrollable">
                 <div className="modal-content text-start">
                   <div className="modal-header bg-success text-white">
-                    <h5 className="modal-title">Gatepass Inward Action (Return Log)</h5>
+                    <h5 className="modal-title">Gatepass Inward Action - {selGatepassNo}(Return Log)</h5>
                     <button type="button" className="btn-close btn-close-white" onClick={() => setShowInModal(false)}></button>
                   </div>
                   <div className="modal-body">
@@ -572,8 +586,8 @@ const GatePassEntry = () => {
                                     {hist.filename ? (
                                       <button
                                         type="button"
-                                        onClick={() => openAttachment(hist.gatepassId, hist.filename)}
-                                        disabled={attachmentLoading}
+                                        onClick={() => openGatepassInAttachment(hist.gatepassInId, hist.filename)}
+                                        disabled={gatepassInAttachmentLoading}
                                         className="btn btn-sm px-2 py-0"
                                         style={{
                                           fontSize: "11px",
@@ -592,9 +606,9 @@ const GatePassEntry = () => {
                                         title={hist.filename}
                                       >
                                         {hist.filename?.toLowerCase().endsWith(".pdf") ? (
-                                          <><FaEye size={10} /> {attachmentLoading ? "Opening…" : "View"}</>
+                                          <><FaEye size={10} /> {gatepassInAttachmentLoading ? "Opening…" : "View"}</>
                                         ) : (
-                                          <><FaDownload size={10} /> {attachmentLoading ? "Downloading…" : "Download"}</>
+                                          <><FaDownload size={10} /> {gatepassInAttachmentLoading ? "Downloading…" : "Download"}</>
                                         )}
                                       </button>
                                     ) : (

@@ -1,16 +1,23 @@
 import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
+import pdfFonts from "../../../src/assets/fonts/vfs_fonts";
 import { format } from "date-fns";
 
 pdfMake.vfs = pdfFonts.vfs;
+
+pdfMake.fonts = {
+    Arial: {
+        normal: "arial.ttf",
+        bold: "arialbd.ttf",
+        italics: "ariali.ttf",
+        bolditalics: "arialbi.ttf"
+    }
+};
 
 export const printEquipmentUsageLog = (equipmentLogList, equipmentName, fromDateValue, toDateValue, equipmentList) => {
     const tableBody = [];
     const fromDate = format(new Date(fromDateValue), "dd-MM-yyyy");
     const toDate = format(new Date(toDateValue), "dd-MM-yyyy");
-    console.log('equipmentName', equipmentName);
     const equipmentData = equipmentList.find(e => e.equipmentName === equipmentName) || {};
-    console.log("Equipment Data for Printing:", equipmentData);
     // Table Header
     tableBody.push([
         { text: "SN",          style: "tableHeader" },
@@ -132,7 +139,12 @@ export const printEquipmentUsageLog = (equipmentLogList, equipmentName, fromDate
             infoValue: {
                 fontSize: 10,
             }
-        }
+        },
+
+        defaultStyle: {
+            fontSize: 10,
+            font: "Arial",
+        },
     };
 
     pdfMake.createPdf(docDefinition).open();

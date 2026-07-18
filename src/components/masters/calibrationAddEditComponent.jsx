@@ -21,7 +21,6 @@ const CalibrationAddEditComponent = ({
   hasCalibration,
   equipment
 }) => {
-  console.log('equipment', equipment);
   const [employeeList, setEmployeeList] = useState([]);
   const [vendorList, setVendorList] = useState([]);
 
@@ -52,12 +51,17 @@ const CalibrationAddEditComponent = ({
     loadDropdowns();
   }, []);
 
-  /* ── Pre-fill agency on REVISE ──────────────────────────────────────── */
+  /* ── Pre-fill agency and default selected Date on REVISE ────────────── */
   useEffect(() => {
-    if (mode === 'add' && hasCalibration && latestAgency) {
-      setFormData(prev => ({ ...prev, calibrationAgency: latestAgency }));
+    if (mode === 'add' && hasCalibration) {
+      setFormData(prev => ({ 
+        ...prev, 
+        calibrationAgency: latestAgency || prev.calibrationAgency,
+        // Automatically default select the latestCalibrationDate on entry if available
+        calibrationDate: latestCalibrationDate ? new Date(latestCalibrationDate) : prev.calibrationDate
+      }));
     }
-  }, [latestAgency, hasCalibration, mode]);
+  }, [latestAgency, latestCalibrationDate, hasCalibration, mode]);
 
   /* ── Load for EDIT ──────────────────────────────────────────────────── */
   useEffect(() => {
@@ -136,7 +140,7 @@ const CalibrationAddEditComponent = ({
         (value) => {
           if (!(mode === 'add' && hasCalibration && latestCalibrationDate)) return true;
           if (!value) return false;
-          return new Date(value) > new Date(latestCalibrationDate);  // ← compare against calibrationDate
+          return new Date(value) > new Date(latestCalibrationDate);
         }
       ),
 
@@ -268,7 +272,7 @@ const CalibrationAddEditComponent = ({
               <Form>
                 <div className="row">
 
-                   {/* Calibrated By — Radio + Dropdown */}
+                   {/* Calibration Type — Radio */}
                   <div className="col-md-4">
                     <div className="form-group">
                       <label className="text-start d-block">
@@ -284,7 +288,7 @@ const CalibrationAddEditComponent = ({
                             checked={values.calibrationType === "I"}
                             onChange={() => {
                               setFieldValue("calibrationType", "I");
-                              setFieldValue("calibrationAgency", "LRDE");  // ← reset to LRDE
+                              setFieldValue("calibrationAgency", "LRDE");
                               setFieldValue("calibratedBy", "");
                             }}
                             className="form-check-input"
@@ -300,7 +304,7 @@ const CalibrationAddEditComponent = ({
                             checked={values.calibrationType === "O"}
                             onChange={() => {
                               setFieldValue("calibrationType", "O");
-                              setFieldValue("calibrationAgency", "");  // ← clear for manual entry
+                              setFieldValue("calibrationAgency", "");
                               setFieldValue("calibratedBy", "");
                             }}
                             className="form-check-input"
@@ -344,7 +348,6 @@ const CalibrationAddEditComponent = ({
                         onChange={(e) => {
                           const months = e.target.value;
                           setFieldValue("periodOfCalibration", months);
-                          // Recompute due date if calibrationDate already selected
                           if (values.calibrationDate && months) {
                             const due = computeDueDate(values.calibrationDate, months);
                             setFieldValue("calibrationDueDate", due);
@@ -365,12 +368,10 @@ const CalibrationAddEditComponent = ({
                         selected={values.calibrationDate ? new Date(values.calibrationDate) : null}
                         onChange={(date) => {
                           setFieldValue("calibrationDate", date);
-                          // Auto-compute due date using period if already set
                           if (date && values.periodOfCalibration) {
                             const due = computeDueDate(date, values.periodOfCalibration);
                             setFieldValue("calibrationDueDate", due);
                           } else if (date) {
-                            // fallback: +1 year
                             const due = new Date(date);
                             due.setFullYear(due.getFullYear() + 1);
                             setFieldValue("calibrationDueDate", due);
@@ -379,11 +380,7 @@ const CalibrationAddEditComponent = ({
                           }
                         }}
                         className="form-control mb-2"
-                        placeholderText={
-                          isRevising && latestCalibrationDate
-                            ? `Must be after ${format(new Date(latestCalibrationDate), "dd-MM-yyyy")}`
-                            : "Select Calibration Date"
-                        }
+                        placeholderText="Select Calibration Date"
                         dateFormat="dd-MM-yyyy"
                         showYearDropdown
                         showMonthDropdown
@@ -427,9 +424,7 @@ const CalibrationAddEditComponent = ({
                     </div>
                   </div>
 
-                 
-
-                  {/* Calibrated By — always visible free text */}
+                  {/* Calibrated By */}
                   <div className="col-md-4">
                     <div className="form-group">
                       <label className="text-start d-block">
