@@ -14,7 +14,13 @@ import {
 } from "../../services/masterservice";
 import { showAlert, showConfirmation } from "../datatable/swalHelper";
 
-const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) => {
+const ProjectAddEditComponent = ({
+  mode,
+  projectId,
+  setStatus,
+  refreshList,
+  existingProjects = [], // NEW: raw project list from parent, used for duplicate check
+}) => {
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [initialValues, setInitialValues] = useState({
     projectCode: "",
@@ -22,10 +28,11 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
     projectShortName: "",
     sanctionDate: null,
     pdc: null,
-    projectDirector: null, // { value, label }
+    projectDirector: null,
   });
   const [loading, setLoading] = useState(true);
   const [submitError, setSubmitError] = useState("");
+  const [originalProjectCode, setOriginalProjectCode] = useState(null);
 
   /* ── Load employees ── */
   useEffect(() => {
@@ -35,7 +42,7 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
         const arr = Array.isArray(list) ? list : list?.data ?? [];
         setEmployeeOptions(
           arr.map((emp) => ({
-            value: emp.employeeId,
+            value: emp.empId,
             label: emp.displayName ?? `${emp.firstName ?? ""} ${emp.lastName ?? ""}`.trim(),
           }))
         );
@@ -65,6 +72,7 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
                 }
               : null,
           });
+          setOriginalProjectCode(data.projectCode ?? null);
         } catch (e) {
           console.error("Failed to load project", e);
         }
@@ -74,12 +82,41 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
     loadProject();
   }, [mode, projectId]);
 
+  /* ── Duplicate check helper ── */
+  // Case-insensitive, trimmed comparison; excludes the record currently being edited.
+  const isDuplicateProjectCode = (code) => {
+    if (!code) return false;
+    const trimmed = code.trim().toLowerCase();
+    if (
+      mode === "edit" &&
+      originalProjectCode &&
+      originalProjectCode.trim().toLowerCase() === trimmed
+    ) {
+      return false;
+    }
+
+    return existingProjects.some((p) => {
+      const sameCode = p.projectCode?.trim().toLowerCase() === trimmed;
+      // Loose comparison as a secondary guard, in case IDs are present
+      // but typed differently (e.g. "6" vs 6)
+      const isSelf = mode === "edit" && String(p.projectId) === String(projectId);
+      return sameCode && !isSelf;
+    });
+  };
+
   /* ── Validation schema ── */
+  // Recreated on every render, so it always closes over the latest
+  // existingProjects / mode / projectId — no stale-closure risk.
   const validationSchema = Yup.object({
     projectCode: Yup.string()
       .trim()
       .max(20, "Max 20 characters")
-      .required("Project Code is required"),
+      .required("Project Code is required")
+      .test(
+        "unique-project-code",
+        "Project Code already exists",
+        (value) => !isDuplicateProjectCode(value)
+      ),
     projectName: Yup.string()
       .trim()
       .max(255, "Max 255 characters")
@@ -92,7 +129,8 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
     pdc: Yup.date()
       .nullable()
       .min(Yup.ref("sanctionDate"), "PDC must be after Sanction Date"),
-    projectDirector: Yup.object().nullable(),
+    projectDirector: Yup.mixed().required("Project Director is required"),
+    
   });
 
   /* ── Format date for API (yyyy-MM-dd) ── */
@@ -105,9 +143,17 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
     return `${yyyy}-${mm}-${dd}`;
   };
 
- /* ── Submit ── */
+  /* ── Submit ── */
   const handleSubmit = async (values, { setSubmitting }) => {
-    // 1. Show confirmation dialog first based on the mode
+    // Extra safety net: re-check duplicate right before submit,
+    // in case existingProjects changed since the field was last validated
+    // (e.g. someone else added the same code in another tab/session).
+    if (isDuplicateProjectCode(values.projectCode)) {
+      showAlert("error", "Project Code already exists.");
+      setSubmitError("Project Code already exists.");
+      return; // block submit, don't even show the confirm dialog
+    }
+
     const confirmed = await showConfirmation(
       mode === "add" ? "Add Project?" : "Update Project?"
     );
@@ -122,7 +168,7 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
       pdc: formatDateForApi(values.pdc),
       projectDirector: values.projectDirector?.value ?? null,
     };
-
+    
     try {
       if (mode === "add") {
         await saveProjectService(payload);
@@ -135,8 +181,6 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
       setStatus("list");
     } catch (e) {
       console.error("Save failed", e);
-      
-      // Kept your error state update and added the generic alert notification
       const errorMessage = e?.response?.data?.message ?? "Failed to save. Please try again.";
       setSubmitError(errorMessage);
       showAlert("error", "Operation failed. Please try again.");
@@ -144,7 +188,6 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
       setSubmitting(false);
     }
   };
-
 
   if (loading) {
     return (
@@ -165,8 +208,6 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
       <Navbar />
       <div className="card p-2">
         <div className="card-body">
-
-          {/* ── Header ── */}
           <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
             <h5 className="mb-0 fw-semibold">
               {mode === "add" ? "Add New Project" : "Edit Project"}
@@ -214,7 +255,7 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
                     <ErrorMessage name="projectShortName" component="div" className="invalid-feedback" />
                   </div>
 
-                   {/* Sanction Date */}
+                  {/* Sanction Date */}
                   <div className="col-md-3">
                     <label className="form-label fw-semibold">Sanction Date</label>
                     <div>
@@ -222,7 +263,6 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
                         selected={values.sanctionDate}
                         onChange={(date) => {
                           setFieldValue("sanctionDate", date);
-                          /* clear PDC if it's now before new sanctionDate */
                           if (values.pdc && date && values.pdc < date) {
                             setFieldValue("pdc", null);
                           }
@@ -281,8 +321,6 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
                     <ErrorMessage name="projectName" component="div" className="invalid-feedback" />
                   </div>
 
-                 
-
                   {/* Project Director */}
                   <div className="col-md-4">
                     <label className="form-label fw-semibold">Project Director</label>
@@ -304,15 +342,10 @@ const ProjectAddEditComponent = ({ mode, projectId, setStatus, refreshList }) =>
                     )}
                   </div>
 
-                </div>{/* /row */}
+                </div>
 
-                {/* ── Action Buttons ── */}
                 <div className="d-flex justify-content-center gap-2 mt-4 pt-3 border-top">
-                  <button
-                    type="submit"
-                    className="btn add px-4"    
-                    disabled={isSubmitting}
-                  >
+                  <button type="submit" className="btn add px-4" disabled={isSubmitting}>
                     {isSubmitting ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-1" role="status" />

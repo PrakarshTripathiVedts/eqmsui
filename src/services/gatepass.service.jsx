@@ -147,3 +147,17 @@ export const checkGatepassNoExists = async (gatepassNo) => {
     throw error;
   }
 }
+
+export const downloadGatepassInFile = async (gatepassId) => {
+  const response = await axios.get(`${API_URL}api/gatepass/gatepass-in/${gatepassId}/attachment`, {
+    headers: authHeader(),
+    responseType: "blob",
+  });
+ 
+  const contentType   = response.headers["content-type"] ?? "application/octet-stream";
+  const disposition   = response.headers["content-disposition"] ?? "";
+  const filenameMatch = disposition.match(/filename[^;=\n]*=["']?([^"';\n]+)["']?/);
+  const filename      = filenameMatch ? filenameMatch[1].trim() : "attachment";
+ 
+  return { blob: response.data, filename, contentType };
+};

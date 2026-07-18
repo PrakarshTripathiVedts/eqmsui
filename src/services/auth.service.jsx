@@ -5,6 +5,7 @@ import { authHeader } from './auth.header';
 
 
 const API_URL = config.API_URL;
+const filSize = config.FILE_SIZE_LIMIT;
 
 export const login = async (username, password) => {
   try {
@@ -29,6 +30,7 @@ export const login = async (username, password) => {
       localStorage.setItem('role', emp.roleName);
       localStorage.setItem('roleId', emp.roleId);
       localStorage.setItem('userName', username);
+      localStorage.setItem('filSize', filSize);
 
       await customAuditStampingLogin(username);
       return response.data;

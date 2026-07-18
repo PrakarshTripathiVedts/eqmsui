@@ -82,21 +82,22 @@ const EquipmentLog = ({ selectedEquipmentId, selectedEquipmentName }) => {
     loadPermissions();
   }, []);
 
-  /* ================= BASE COLUMNS ================= */
   const baseColumns = [
-    { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-    { name: "Start Time", selector: (row) => row.startTime, sortable: true, align: 'text-center' },
-    { name: "End Time", selector: (row) => row.endTime, sortable: true, align: 'text-center' },
-    { name: "Total Hours", selector: (row) => row.totalHours, sortable: true, align: 'text-end' },
-    { name: "Description", selector: (row) => row.description, sortable: true, align: 'text-center' },
-    { name: "Used By", selector: (row) => row.usedByName, sortable: true, align: 'text-center' },
+    { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center', width: '70px' },
+    { name: "Start Time", selector: (row) => row.startTime, sortable: true, align: 'text-center', width: '180px' },
+    { name: "End Time", selector: (row) => row.endTime, sortable: true, align: 'text-center', width: '180px' },
+    { name: "Total Hours", selector: (row) => row.totalHours, sortable: true, align: 'text-center', width: '120px' },
+    { name: "Description", selector: (row) => row.description, sortable: true, align: 'text-start', width: '300px' },
+    { name: "Used By", selector: (row) => row.usedByName, sortable: true, align: 'text-start', width: '180px' },
   ];
 
-  /* Dynamic columns addition based on Edit permission */
+  /* Dynamic columns addition based on Edit permission with fixed width */
   const columns = permissions.forEdit
-    ? [...baseColumns, { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' }]
+    ? [
+        ...baseColumns, 
+        { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center', width: '100px' }
+      ]
     : baseColumns;
-
   /* ================= ACTIONS ================= */
   const editEquipmentLog = async (id) => {
     setEqupmentLogId(id);

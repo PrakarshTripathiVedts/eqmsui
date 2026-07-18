@@ -5,7 +5,7 @@ import Navbar from "../navbar/navbar";
 import { Link } from "react-router-dom";
 import { FaUserEdit, FaKey } from "react-icons/fa"; // ✅ Imported FaKey icon
 import UserManagerAddEditComponent from "./userManagerAddEdit";
-import { showAlert, showConfirmation } from "../datatable/swalHelper";
+import { showAlert, showConfirmation, showConfirmationResetPassword } from "../datatable/swalHelper";
 import { resetUserPassword } from "../../services/masterservice";
 
 const FORM_URL = "userManager";
@@ -62,7 +62,7 @@ const UserManager = () => {
 
   // ✅ Updated Reset Password Action matching handleSubmit style
 const handleResetPassword = async (loginId, userName) => {
- const confirmed = await showConfirmation();
+ const confirmed = await showConfirmationResetPassword();
   if (!confirmed) return;
 
   try {
@@ -88,7 +88,7 @@ const handleResetPassword = async (loginId, userName) => {
       data.map((item, index) => ({
         sn:       index + 1 + ".",
         userName: item.userName ?? "-",
-        empName:  item.empName  ?? "-",
+        empName: item.empTitle ? `${item.empTitle} ${item.empName ?? "-"}` : (item.empName ?? "-"),
         roleName: item.roleName ?? "-",
         action: permissions.forEdit ? (
           <div className="d-flex justify-content-center">
@@ -117,9 +117,9 @@ const handleResetPassword = async (loginId, userName) => {
   /* ── Columns ── */
   const baseColumns = [
     { name: "SN",        selector: (row) => row.sn,        sortable: true, align: "text-center" },
-    { name: "User Name", selector: (row) => row.userName,  sortable: true, align: "text-center" },
+    { name: "User Name", selector: (row) => row.userName,  sortable: true, align: "text-start" },
     { name: "Employee",  selector: (row) => row.empName,   sortable: true, align: "text-start"  },
-    { name: "Role Name", selector: (row) => row.roleName,  sortable: true, align: "text-center" },
+    { name: "Role Name", selector: (row) => row.roleName,  sortable: true, align: "text-start" },
   ];
 
   const columns = permissions.forEdit

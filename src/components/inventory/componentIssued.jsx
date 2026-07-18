@@ -180,6 +180,7 @@ const ReturnModal = ({ issuedRow, employeeOptions, onClose, onSaved }) => {
                     dateFormat="dd-MM-yyyy"
                     placeholderText="DD-MM-YYYY"
                     className="form-control"
+                    minDate={issuedRow?.issuedDate ? parseISO(issuedRow.issuedDate) : null}
                     maxDate={new Date()}
                     showMonthDropdown
                     showYearDropdown
@@ -714,7 +715,7 @@ const ComponentIssued = ({ component, setStatus, refreshList }) => {
               </div>
             ) : (
               <div style={{ overflowX: "auto" }}>
-                <table className="table table-sm table-bordered" style={{ fontSize: 13 }}>
+                <table className="table table-sm table-bordered" style={{ fontSize: 15 }}>
                   <thead style={{ background: "#F9FAFB" }}>
                     <tr>
                       <th>SN</th>

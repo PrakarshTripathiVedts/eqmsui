@@ -25,7 +25,6 @@ const EmployeeComponent = () => {
   /* ================= LOAD PERMISSIONS ================= */
   useEffect(() => {
     const roleId = localStorage.getItem("roleId");
-
     const loadPermissions = async () => {
       try {
         const details = await getFormDetailsList(roleId);
@@ -53,20 +52,23 @@ const EmployeeComponent = () => {
   }, []);
 
   /* ================= LOAD EMPLOYEE LIST ================= */
-  const getEmployeeMasterList = async () => {
-    try {
-      const data = await getEmployeeListService();
-      setTableData(Array.isArray(data) && data.length > 0 ? data : []);
-    } catch (err) {
-      setTableData([]);
-    }
-  };
-
   useEffect(() => {
+    const getEmployeeMasterList = async () => {
+      try {
+        const data = await getEmployeeListService();
+        setTableData(Array.isArray(data) && data.length > 0 ? data : []);
+      } catch (err) {
+        setTableData([]);
+      }
+    };
     getEmployeeMasterList();
   }, []);
 
   /* ================= TABLE DATA ================= */
+  // NOTE: purely raw data here — no permission-dependent JSX baked in.
+  // The Action column/button is computed at render time inside `columns` below,
+  // so it always reflects the latest `permissions` state regardless of
+  // which async call (list vs permissions) resolves first.
   const setTableData = (data) => {
     setEmployeeList(
       data.map((item, index) => ({
@@ -76,17 +78,7 @@ const EmployeeComponent = () => {
         punchCard:    item.punchCardNo  ?? "-",
         email:        item.email        ?? "-",
         mobile:       item.mobileNo     ?? "-",
-
-        // Edit button shown only when forEdit permission is true
-        action: permissions.forEdit ? (
-          <button
-            className="btn btn-warning btn-sm"
-            onClick={() => item.empId != null && editEmployee(item.empId)}
-            title="Edit Employee"
-          >
-            <FaEdit size={16} />
-          </button>
-        ) : "-",
+        empId:        item.empId ?? null,
       }))
     );
   };
@@ -96,7 +88,7 @@ const EmployeeComponent = () => {
   const addEmployee  = ()    => { setStatus("add"); };
 
   /* ================= COLUMNS ================= */
-  // hide Action column entirely if neither edit nor delete is allowed
+  // hide Action column entirely if forEdit is false
   const baseColumns = [
     { name: "SN",         selector: (row) => row.sn,           sortable: true, align: "text-center" },
     { name: "Employee",   selector: (row) => row.employeeName,  sortable: true, align: "text-start"  },
@@ -107,8 +99,23 @@ const EmployeeComponent = () => {
   ];
 
   const columns = permissions.forEdit
-    ? [...baseColumns, { name: "Action", selector: (row) => row.action, align: "text-center" }]
-    : baseColumns;
+  ? [
+      ...baseColumns,
+      {
+        name: "Action",
+        align: "text-center",
+        selector: (row) => (
+          <button
+            className="btn btn-warning btn-sm"
+            onClick={() => row.empId != null && editEmployee(row.empId)}
+            title="Edit Employee"
+          >
+            <FaEdit size={16} />
+          </button>
+        ),
+      },
+    ]
+  : baseColumns;
 
   /* ================= ROUTING ================= */
   switch (status) {

@@ -1,4 +1,4 @@
- import { Form, Formik ,Field, ErrorMessage} from "formik";
+import { Form, Formik ,Field, ErrorMessage} from "formik";
 import * as Yup from "yup";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,7 @@ function ChangePasswordComponent(){
         .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
         .matches(/[^a-zA-Z0-9]/, "Password must contain at least one special character")
         .matches(/[0-9]/,"Password must contain at least one number")
+        .notOneOf([Yup.ref("oldPassword")], "New password must not be the same as old password")
     });
 
     const handleSubmit = async (values) => {
@@ -75,7 +76,7 @@ function ChangePasswordComponent(){
                                 <div className="row">
                                     {/* <!-- Left content in the header --> */}
                                     <div className="col-md-2 ps-0">
-                                        <h5 className="ml-0 mt-2 text-white"><b>Password Change</b></h5> 
+                                        <h5 className="ml-0 mt-2"><b>Password Change</b></h5> 
                                     </div>
 
                                     {/* <!-- Right content in the header --> */}

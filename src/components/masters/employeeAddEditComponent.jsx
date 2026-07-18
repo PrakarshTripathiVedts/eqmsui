@@ -42,6 +42,8 @@ const EmployeeAddEditComponent = ({ mode, employeeId }) => {
             .required("Mobile number is required"),
         desigId: Yup.mixed().required("Designation is required"),
         divisionId: Yup.mixed().required("Division is required"),
+        empStatus: Yup.string().required("Employee status is required"),
+        srNo: Yup.number().typeError('Sr. No must be a number').min(0, 'Sr. No cannot be negative').required('Sr. No is required'),
     });
 
     useEffect(() => {
@@ -182,7 +184,24 @@ const EmployeeAddEditComponent = ({ mode, employeeId }) => {
                                     {/* Sr No */}
                                     <div className="col-md-2">
                                         <label className="form-label">Sr. No</label>
-                                        <Field name="srNo" type="number" className="form-control form-control-sm" />
+                                        <Field
+                                            name="srNo"
+                                            type="number"
+                                            min="0"
+                                            className="form-control form-control-sm"
+                                            onKeyDown={(e) => {
+                                                if (e.key === '-' || e.key === 'e' || e.key === '+') {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                            onPaste={(e) => {
+                                                const pasted = e.clipboardData.getData('text');
+                                                if (/-/.test(pasted)) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                        />
+                                        <ErrorMessage name="srNo" component="div" className="text-danger small" />
                                     </div>
 
                                     {/* Emp No */}
