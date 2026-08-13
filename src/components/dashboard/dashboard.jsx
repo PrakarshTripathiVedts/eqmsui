@@ -3,7 +3,7 @@ import Navbar from "../navbar/navbar";
 import { getEquipmentListService } from "../../services/masterservice";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { getGatepassList } from "../../services/gatepass.service";
-import { 
+import {
   FaTriangleExclamation,
   FaRegCircleCheck,
   FaBarcode,
@@ -17,21 +17,23 @@ import {
 } from "react-icons/fa6";
 
 import { BsHourglassSplit, BsTag } from "react-icons/bs";
+import { FaAlignRight, FaPlaneDeparture } from "react-icons/fa";
 
 const AUTO_CLOSE_SECS = 60;
 
 const TABS = [
-  { key: "week",    label: "1 Week",  days: 7,    color: "#E24B4A" },
-  { key: "fifteen", label: "15 Days", days: 15,   color: "#EF9F27" },
-  { key: "month",   label: "1 Month", days: 30,   color: "#378ADD" },
-  { key: "expired", label: "Expired", days: null,  color: "#6B7280" },
+  { key: "expired", label: "Expired", days: null, color: "#E24B4A" },
+  { key: "week", label: "1 Week", days: 7, color: "#4672ca" },
+  { key: "fifteen", label: "15 Days", days: 15, color: "#EF9F27" },
+  { key: "month", label: "1 Month", days: 30, color: "#378ADD" },
+  
 ];
 
 const getUrgency = (daysLeft) => {
-  if (daysLeft < 0)   return { accentColor: "#6B7280", badgeBg: "rgba(107,114,128,0.13)", badgeColor: "#374151" };
-  if (daysLeft <= 7)  return { accentColor: "#E24B4A", badgeBg: "rgba(226,75,74,0.12)",    badgeColor: "#991B1B" };
-  if (daysLeft <= 15) return { accentColor: "#EF9F27", badgeBg: "rgba(239,159,39,0.12)",  badgeColor: "#92400E" };
-  return               { accentColor: "#378ADD", badgeBg: "rgba(55,138,221,0.12)",         badgeColor: "#1E40AF" };
+  if (daysLeft < 0) return { accentColor: "#6B7280", badgeBg: "rgba(107,114,128,0.13)", badgeColor: "#d42121" };
+  if (daysLeft <= 7) return { accentColor: "#E24B4A", badgeBg: "rgba(226,75,74,0.12)", badgeColor: "#374151" };
+  if (daysLeft <= 15) return { accentColor: "#EF9F27", badgeBg: "rgba(239,159,39,0.12)", badgeColor: "#92400E" };
+  return { accentColor: "#378ADD", badgeBg: "rgba(55,138,221,0.12)", badgeColor: "#1E40AF" };
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -39,7 +41,7 @@ const getUrgency = (daysLeft) => {
 ───────────────────────────────────────────────────────────── */
 const CalibrationModal = ({ allItems, onClose }) => {
   const [secondsLeft, setSecondsLeft] = useState(AUTO_CLOSE_SECS);
-  const [activeTab, setActiveTab] = useState("week");
+  const [activeTab, setActiveTab] = useState("expired");
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -51,9 +53,9 @@ const CalibrationModal = ({ allItems, onClose }) => {
     return () => clearInterval(interval);
   }, [onClose]);
 
-  const progressPct  = (secondsLeft / AUTO_CLOSE_SECS) * 100;
+  const progressPct = (secondsLeft / AUTO_CLOSE_SECS) * 100;
   const activeTabCfg = TABS.find(t => t.key === activeTab);
-  const today        = new Date();
+  const today = new Date();
 
   const filteredItems = allItems.filter(item => {
     if (!item.calibrationDueDate) return false;
@@ -209,7 +211,7 @@ const AlertRow = ({ item, today }) => {
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
         <div style={ds.rowDate}>{format(parseISO(item.calibrationDueDate), "dd-MM-yyyy")}</div>
-        <span  className="text-danger" style={{ ...ds.pill, background: badgeBg, color: badgeColor }}>
+        <span className="text-danger" style={{ ...ds.pill, background: badgeBg, color: badgeColor }}>
           {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? "Today" : `${daysLeft}d left`}
         </span>
       </div>
@@ -217,6 +219,90 @@ const AlertRow = ({ item, today }) => {
   );
 };
 
+
+
+// PROBALE RETURN ROW
+
+const TravelRow = ({ item, today }) => {
+  const hasReturnDate = Boolean(item.probableReturnDate);
+
+  const { badgeBg, badgeColor } = getUrgency(-1);
+
+  const daysLeft = hasReturnDate
+    ? differenceInDays(
+      parseISO(item.probableReturnDate),
+      today
+    )
+    : null;
+
+  return (
+    <div style={ds.listRow}>
+
+      {/* Icon */}
+      <div
+        style={{
+          ...ds.rowIconWrap,
+          background: "#4d4dff18",
+          color: "#4d4dff"
+        }}
+      >
+        <FaPlaneDeparture style={{ fontSize: 14 }} />
+      </div>
+
+      {/* Main Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={ds.rowTitle}>
+          Gate Pass No : {item.gatepassNo} · {item.destination}
+        </div>
+
+        <div style={ds.rowMeta}>
+          {item.category}
+        </div>
+      </div>
+
+      {/* Right Side */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 3,
+          flexShrink: 0
+        }}
+      >
+
+        {/* Return Date */}
+        {hasReturnDate && (
+          <div style={ds.rowDate}>
+            {format(
+              parseISO(item.probableReturnDate),
+              "dd-MM-yyyy"
+            )}
+          </div>
+        )}
+
+        {/* Expired Status */}
+        {daysLeft !== null && (
+          <span
+            className="text-danger"
+            style={{
+              ...ds.pill,
+              background: badgeBg,
+              color: badgeColor
+            }}
+          >
+            {daysLeft < 0
+              ? `${Math.abs(daysLeft)}d overdue`
+              : daysLeft === 0
+                ? "Today"
+                : `${daysLeft}d left`}
+          </span>
+        )}
+
+      </div>
+    </div>
+  );
+};
 /* ─────────────────────────────────────────────────────────────
     PANEL WRAPPER
 ───────────────────────────────────────────────────────────── */
@@ -251,9 +337,10 @@ const Panel = ({ title, icon: IconComponent, iconColor, badge, badgeBg, badgeCol
 ───────────────────────────────────────────────────────────── */
 const Dashboard = () => {
   const [equipmentList, setEquipmentList] = useState([]);
-  const [allDueItems,   setAllDueItems]   = useState([]);
-  const [gatepassList,  setGatepassList]  = useState([]);
-  const [showModal,     setShowModal]     = useState(false);
+  const [allDueItems, setAllDueItems] = useState([]);
+  const [gatepassList, setGatepassList] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [expiredData, setExpiredData] = useState([]);
 
   const today = new Date();
 
@@ -289,6 +376,21 @@ const Dashboard = () => {
         ? response
         : response?.data || response?.content || response?.gatepassList || [];
       setGatepassList(data);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const expiredData = data.filter((item) => {
+        if (!item.probableReturnDate) return false;
+
+        const returnDate = parseISO(item.probableReturnDate);
+        returnDate.setHours(0, 0, 0, 0);
+
+        return returnDate < today;
+      });
+
+      setExpiredData(expiredData);
+
     } catch {
       setGatepassList([]);
     }
@@ -306,7 +408,7 @@ const Dashboard = () => {
     differenceInDays(parseISO(i.calibrationDueDate), today) < 0
   ).length;
 
-  const gpOut     = gatepassList.filter(g => g.itemStatus === "O").length;
+  const gpOut = gatepassList.filter(g => g.itemStatus === "O").length;
   const gpPending = gatepassList.filter(g => g.itemStatus === "P").length;
 
   const CAT_COLORS = { RMGP: "#E24B4A", TSGP: "#EF9F27", NRMGP: "#355cdd", "NRMGP-C": "#8B5CF6" };
@@ -371,7 +473,7 @@ const Dashboard = () => {
             title="Calibration Alerts"
             icon={FaRegBell}
             iconColor="#E24B4A"
-            badge={allDueItems.length > 0 ? `${allDueItems.length} pending` : undefined}
+            badge={allDueItems.length > 0 ? `${allDueItems.length}` : undefined}
             badgeBg="rgba(226,75,74,0.12)"
             badgeColor="#991B1B"
             action={allDueItems.length > 0 ? "View All →" : undefined}
@@ -390,6 +492,29 @@ const Dashboard = () => {
               ))
             )}
           </Panel>
+          <Panel
+            title="Overdue Gatepasses"
+            icon={FaAlignRight}
+            iconColor="#E24B4A"
+            badge={expiredData.length > 0 ? `${expiredData.length}` : undefined}
+            badgeBg="rgba(226,75,74,0.12)"
+            badgeColor="#991B1B"
+            // action={expiredData.length > 0 ? "View All →" : undefined}
+            onAction={() => setShowModal(true)}
+          >
+            {expiredData?.length === 0 ? (
+              <div style={ds.emptyState}>
+                <FaRegCircleCheck style={{ fontSize: 38, color: "#10B981" }} />
+                <p style={{ marginTop: 8, fontSize: 13, color: "#6B7280" }}>
+                  No Expired Returns
+                </p>
+              </div>
+            ) : (
+              expiredData?.map(item => (
+                <TravelRow key={item.equipmentId} item={item} today={today} />
+              ))
+            )}
+          </Panel>
 
           {/* Right: Gatepass Category Breakdown */}
           <Panel
@@ -401,7 +526,7 @@ const Dashboard = () => {
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {["RMGP", "TSGP", "NRMGP", "NRMGP-C"].map(cat => {
                 const count = gatepassList.filter(g => g.category === cat).length;
-                const pct   = gatepassList.length > 0
+                const pct = gatepassList.length > 0
                   ? Math.round((count / gatepassList.length) * 100)
                   : 0;
                 const color = CAT_COLORS[cat];
@@ -433,7 +558,7 @@ const Dashboard = () => {
                 );
               })}
             </div>
-            
+
             {/* Total Summary Footer Box */}
             <div style={{
               marginTop: 14, padding: "12px 14px",
@@ -479,9 +604,9 @@ const ds = {
   },
   twoCol: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(3, 1fr)",
     gap: "1.1rem",
-    alignItems: "stretch", 
+    alignItems: "stretch",
   },
 
   /* Panel */
@@ -503,7 +628,7 @@ const ds = {
     background: "#FAFBFF",
     flexShrink: 0,
   },
-  panelTitle:  { fontSize: 13, fontWeight: 700, color: "#111827", letterSpacing: "0.01em" },
+  panelTitle: { fontSize: 13, fontWeight: 700, color: "#111827", letterSpacing: "0.01em" },
   panelAction: {
     fontSize: 12, color: "#355cdd",
     background: "none", border: "none",
@@ -511,7 +636,7 @@ const ds = {
   },
   panelBody: {
     padding: "1rem 1.2rem",
-    overflowY: "auto", 
+    overflowY: "auto",
     display: "flex",
     flexDirection: "column",
     gap: 12,
@@ -535,9 +660,9 @@ const ds = {
     flexShrink: 0,
   },
   rowTitle: { fontSize: 13, fontWeight: 600, color: "#111827" },
-  rowMeta:  { fontSize: 11, color: "#6B7280", marginTop: 1 },
-  rowDate:  { fontSize: 11, color: "#374151", fontWeight: 600 },
-  pill:     { fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 700, whiteSpace: "nowrap" },
+  rowMeta: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+  rowDate: { fontSize: 11, color: "#374151", fontWeight: 600 },
+  pill: { fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 700, whiteSpace: "nowrap" },
 
   /* Chip */
   chip: { fontSize: 11, padding: "2px 8px", borderRadius: 20, fontWeight: 600 },
@@ -609,18 +734,18 @@ const ms = {
     justifyContent: "space-between", gap: 12,
     background: "#FAFBFF",
   },
-  cardName:    { fontSize: 14, fontWeight: 600, color: "#111827" },
-  cardMeta:    { fontSize: 12, color: "#6B7280", marginTop: 2 },
-  cardRight:   { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, flexShrink: 0, minWidth: 100 },
+  cardName: { fontSize: 14, fontWeight: 600, color: "#111827" },
+  cardMeta: { fontSize: 12, color: "#6B7280", marginTop: 2 },
+  cardRight: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, flexShrink: 0, minWidth: 100 },
   cardDueDate: { fontSize: 12, color: "#374151", whiteSpace: "nowrap", fontWeight: 700 },
-  badge:       { fontSize: 12, padding: "2px 8px", borderRadius: 6, fontWeight: 600, whiteSpace: "nowrap" },
+  badge: { fontSize: 12, padding: "2px 8px", borderRadius: 6, fontWeight: 600, whiteSpace: "nowrap" },
   footer: {
     padding: "0.75rem 1.25rem", borderTop: "1px solid #F1F4F9",
     display: "flex", alignItems: "center", justifyContent: "space-between",
     background: "#FAFBFF",
   },
-  countdown:    { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#888" },
-  progressBar:  { width: 120, height: 4, background: "#eee", borderRadius: 2, overflow: "hidden" },
+  countdown: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#888" },
+  progressBar: { width: 120, height: 4, background: "#eee", borderRadius: 2, overflow: "hidden" },
   progressFill: { height: "100%", background: "#E24B4A", borderRadius: 2, transition: "width 1s linear" },
   dismissBtn: {
     fontSize: 12, background: "none",

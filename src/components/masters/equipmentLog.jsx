@@ -163,7 +163,9 @@ const EquipmentLog = ({ selectedEquipmentId, selectedEquipmentName }) => {
     }
   };
 
-  const equipmentOptions = equipmentList.map(equip => ({
+  const equipmentOptions = equipmentList
+  .filter(equip => equip.logRequired === "Y")
+  .map(equip => ({
     value: equip.equipmentId,
     label: equip.equipmentName + '-' + equip.itemSerialNumber,
     equipmentData: equip, // Store the entire equipment data for later use
@@ -332,7 +334,7 @@ const EquipmentLog = ({ selectedEquipmentId, selectedEquipmentName }) => {
                 <div className="col-md-12 d-flex justify-content-end align-items-center flex-wrap">
                   <div className="d-flex align-items-center me-4 mb-2">
                     <label htmlFor="equipmentId" className="font-label me-2 mb-0"> Equipment: &nbsp;</label>
-                    <div className="text-start " style={{ width: "400px" }}>
+                    <div className="text-start " style={{ width: "500px" }}>
                       <Select
                         options={equipmentOptions}
                         value={equipmentOptions.find(opt => opt.value === Number(equipmentValue)) || null}

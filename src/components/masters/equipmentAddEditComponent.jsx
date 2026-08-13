@@ -47,6 +47,8 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
     procurementName: "",
     crvNo: "",
     crvDate: "",
+    logRequired: "N",
+    calibrationRequired: "N",
   });
 
 
@@ -80,6 +82,8 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
         procurementName: data?.procurementName ?? "",
         crvNo: data?.crvNo ?? "",
         crvDate: data?.crvDate ?? "",
+        logRequired: data?.logRequired ?? "",
+        calibrationRequired: data?.calibrationRequired ?? "",
 
       }));
     } catch (err) {
@@ -160,7 +164,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
     soDate: stringWithCommonRules("So Date"),
     projectId: requiredField,
     ssrNo: Yup.string().when("projectId", {
-      is: (projectId) => projectId !== 0,
+      is: (projectId) => projectId === 0 || projectId === "0",
       then: () => stringWithCommonRules("SSR No"),
       otherwise: () => Yup.string().notRequired(),
     }),
@@ -303,11 +307,6 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
                 initialValues={formData}
                 validationSchema={validationSchema}
                 onSubmit={(values) => {
-                  // const payload = {
-                  //   ...values,
-                  //   model: values.model ? { id: values.model } : null,
-                  //   make: values.make ? { id: values.make } : null,
-                  // };
                   handleSubmit(values);
                 }}
 
@@ -711,6 +710,38 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
                           <ErrorMessage name="specification" component="div" className="text-danger text-start" />
                         </div>
                       </div>
+                      <div className="col-md-3">
+                        <div className="form-group">
+                          <label htmlFor="logRequired" className="text-start d-block"> Equipment Log Required: <span className="text-danger">*</span> </label>
+
+                          <Field
+                            as="select"
+                            name="logRequired"
+                            className="form-control mb-2"
+                          >
+                            <option value="Y">Yes</option>
+                            <option value="N">No</option>
+                          </Field>
+
+                          <ErrorMessage name="logRequired" component="div" className="text-danger text-start" />
+                        </div>
+                      </div>
+                      <div className="col-md-3">
+                        <div className="form-group">
+                          <label htmlFor="calibrationRequired" className="text-start d-block"> Calibration Required: <span className="text-danger">*</span> </label>
+
+                          <Field
+                            as="select"
+                            name="calibrationRequired"
+                            className="form-control mb-2"
+                          >
+                            <option value="Y">Yes</option>
+                            <option value="N">No</option>
+                          </Field>
+
+                          <ErrorMessage name="calibrationRequired" component="div" className="text-danger text-start" />
+                        </div>
+                      </div>
                       <div className="col-md-6">
                         <div className="form-group">
                           <label htmlFor="remarks" className="text-start d-block">Remarks : </label>
@@ -741,7 +772,7 @@ const EquipmentAddEditComponent = ({ mode, equipmentId }) => {
                       <button type="submit" className={`btn ${mode === "add" ? "submit" : "edit"} mt-3`} >
                         {mode === "add" ? "SUBMIT" : "UPDATE"}
                       </button>
-                      <button className="btn back mt-3" onClick={() => redirectEquipmentList()}>BACK</button>
+                      <button type="button" className="btn back mt-3" onClick={() => redirectEquipmentList()}>BACK</button>
                     </div>
                   </Form>
                 )}

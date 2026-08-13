@@ -427,7 +427,7 @@ const GatePassEntry = () => {
                       showMonthDropdown
                       dropdownMode="select"
                       minDate={filterFromDate || undefined}  // cannot go below fromDate
-                      maxDate={new Date()}                   // cannot exceed today
+                      // maxDate={new Date()}                   // cannot exceed today
                       onKeyDown={e => e.preventDefault()}
                       isClearable={false}                    // don't allow clearing default
                     />

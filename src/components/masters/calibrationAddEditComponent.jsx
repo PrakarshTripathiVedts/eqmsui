@@ -163,10 +163,10 @@ const CalibrationAddEditComponent = ({
     calibratedBy: Yup.string()
       .required("This field is required"),
 
-    remarks: Yup.string()
-      .min(2, "Remarks must be at least 2 characters")
-      .max(500, "Remarks must be at most 500 characters")
-      .required("Remarks is required"),
+    // remarks: Yup.string()
+    //   .min(2, "Remarks must be at least 2 characters")
+    //   .max(500, "Remarks must be at most 500 characters")
+    //   .required("Remarks is required"),
   });
 
   /* ── Submit ─────────────────────────────────────────────────────────── */
@@ -444,7 +444,7 @@ const CalibrationAddEditComponent = ({
                   <div className="col-md-12">
                     <div className="form-group">
                       <label htmlFor="remarks" className="text-start d-block">
-                        Remarks: <span className="text-danger">*</span>
+                        Remarks: 
                       </label>
                       <Field
                         as="textarea"
