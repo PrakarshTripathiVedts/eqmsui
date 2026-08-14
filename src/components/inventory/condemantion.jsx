@@ -3,7 +3,7 @@ import Navbar from "../navbar/navbar";
 import Datatable from "../datatable/datatable";
 import { useState, useEffect } from "react";
 import { FaBookmark, FaEdit, FaFileExcel, FaFilePdf } from "react-icons/fa";
-import { getCondemnationList, getImportedSSRItemsByDivision, addingToCondemantion, } from "../../services/inventoryService";
+import { getCondemnationList, getImportedSSRItemsByDivision, addingToCondemantion, downloadCondemnationReport, } from "../../services/inventoryService";
 import { format, parseISO } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { getDivisionListService, getFormDetailsList } from "../../services/admin.service";
@@ -305,19 +305,31 @@ const Condemnation = () => {
         );
     }
 
-    const handlePdfExport = () => {
-        generatePdfForListPage({
-            title: "Codemnation Items Report",
-            columns: columns,
-            data: condemnationList,
-            fileName: "Codemnation_Item_Report",
-            orientation: "landscape",
+    // const handlePdfExport = () => {
+    //     generatePdfForListPage({
+    //         title: "Codemnation Items Report",
+    //         columns: columns,
+    //         data: condemnationList,
+    //         fileName: "Codemnation_Item_Report",
+    //         orientation: "landscape",
 
-            details: {
-                "Division": divisionOptions.find(opt => opt.value === Number(divisionId))?.label || "-",
-            }
-        });
-    };
+    //         details: {
+    //             "Division": divisionOptions.find(opt => opt.value === Number(divisionId))?.label || "-",
+    //         }
+    //     });
+    // };
+
+    const handlePdfExport = async () => {
+                    console.log("handle pdf export")
+                    const payLoad = {
+                      divisionId : divisionId,
+                       division : divisionOptions.find(opt => opt.value === Number(divisionId))?.label || "-",
+                       
+                       
+                    }
+                    console.log("payload****",payLoad)
+                    await downloadCondemnationReport(payLoad);
+                }
 
     const handleExcelExport = () => {
         generateExcelForListPage({

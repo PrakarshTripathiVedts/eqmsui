@@ -4,7 +4,7 @@ import Datatable from "../datatable/datatable";
 import { useState, useEffect } from "react";
 import { FaEdit, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import { TbLabelImportantFilled } from "react-icons/tb";
-import { syncSSRItemsToLocal, getLocalSSRItems, importSSRItemToMain, getImportedSSRItemsByDivision, deleteSSRItemfromSatge, } from "../../services/inventoryService";
+import { syncSSRItemsToLocal, getLocalSSRItems, importSSRItemToMain, getImportedSSRItemsByDivision, deleteSSRItemfromSatge, downloadSSRItems, } from "../../services/inventoryService";
 import { format, parseISO } from "date-fns";
 import SsrItemsImportModal from "./ssrItemsImportModal ";
 import { Tooltip } from "react-tooltip";
@@ -369,19 +369,29 @@ const SSRItems = () => {
     };
 
 
-    const handlePdfExport = () => {
-        generatePdfForListPage({
-            title: "Imported SSR Items Report",
-            columns: columnsCopy,
-            data: ssrImportedItemList,
-            fileName: "Imported_SSR_Items_Report",
-            orientation: "landscape",
+    // const handlePdfExport = () => {
+    //     generatePdfForListPage({
+    //         title: "Imported SSR Items Report",
+    //         columns: columnsCopy,
+    //         data: ssrImportedItemList,
+    //         fileName: "Imported_SSR_Items_Report",
+    //         orientation: "landscape",
 
-            details: {
-                "Division": divisionOptions.find(opt => opt.value === Number(divisionId))?.label || "-",
-            }
-        });
-    };
+    //         details: {
+    //             "Division": divisionOptions.find(opt => opt.value === Number(divisionId))?.label || "-",
+    //         }
+    //     });
+    // };
+
+     const handlePdfExport = async () => {
+        console.log("handle pdf export")
+        const payLoad = {
+           divisionId : divisionId,
+           divisionName : divisionOptions.find(opt => opt.value === Number(divisionId))?.label || "-"
+        }
+        console.log("payload****",payLoad)
+        await downloadSSRItems(payLoad);
+    }
 
     const handleExcelExport = () => {
         generateExcelForListPage({
