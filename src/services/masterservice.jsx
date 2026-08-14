@@ -548,3 +548,62 @@ export const resetUserPassword = async (loginId) => {
     throw error;
   }
 };
+
+export const getCategoryList = async () => {
+  try {
+    const response = await axios.get(`${API_URL}api/master/category`, {
+      headers: {
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching category by ID:", error);
+    throw error;
+  }
+}
+
+export const saveCategoryMaster = async (data) => {
+  try {
+  
+    const response = await axios.post(`${API_URL}api/master/category/save`, data, {
+      headers: {
+         'Content-Type': 'application/json',
+        ...authHeader()
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error saving category data:", error);
+    throw error;
+  }
+}
+
+export const updateCategoryMaster = async (Data) => {
+  try {
+    const response = await axios.put(`${API_URL}api/master/category/update`, Data, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating Category :", error);
+    throw error;
+  }
+};
+
+export const getCategoryById = async (id) => {
+  try {
+    const response = await axios.get(`${API_URL}api/master/category/${id}`, {
+      headers: {
+        ...authHeader(),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching Category by ID:", error);
+    throw error;
+  }
+}

@@ -127,12 +127,13 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
     }
   };
 
-  const equipmentOptions = equipmentList.map(equip => ({
-    value: equip.equipmentId,
-    label: equip.equipmentName,
-    data: equip, // Store the entire equipment object for later use
-  }));
-
+  const equipmentOptions = equipmentList
+    .filter(equip => equip.calibrationRequired === "Y")
+    .map(equip => ({
+      value: equip.equipmentId,
+      label: `${equip?.equipmentName ?? ""} - ${equip?.itemSerialNumber ?? ""}`,
+      data: equip, // Store the entire equipment object for later use
+    }));
   const handleEquipChange = (data) => {
     setEquipmentValue(data?.value);
     setEquipmentName(data?.label);
@@ -240,11 +241,11 @@ const Calibration = ({ selectedEquipmentId, selectedEquipmentName }) => {
             <div className="card-body text-center">
               <h3>Calibration</h3>
 
-              <div className="row justify-content-center align-items-center rowHeadercolor">
+              <div className="row justify-content-center align-items-center rowHeadercolor ">
                 <div className="col-md-12 d-flex justify-content-end align-items-center flex-wrap">
-                  <div className="d-flex align-items-center me-4 mb-2">
+                  <div className="d-flex align-items-center mb-2">
                     <label htmlFor="equipmentId" className="font-label me-2 mb-0"> Equipment: &nbsp;</label>
-                    <div className="text-start " style={{ width: "400px" }}>
+                    <div className="text-start " style={{ width: "40vw" }}>
                       <Select
                         options={equipmentOptions}
                         value={equipmentOptions.find(opt => opt.value === Number(equipmentValue)) || null}

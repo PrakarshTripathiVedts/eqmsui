@@ -128,7 +128,7 @@ const Equipment = () => {
         presentLocation: item.presentLocation ?? '-',
         projectCode: item.projectCode ?? '-',
         parentLocation: item.parentLocation ?? '-',
-        ssrNo: item.ssrNo ?? '-',
+        ssrNo: item.ssrNo || '-',
         specification: (
           <>
             {item.specification

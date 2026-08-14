@@ -1,6 +1,7 @@
 import { useState } from "react";
 import './login.css';
-import loginimage from '../../assets/images/login_image.jpg';
+import loginimage from '../../assets/images/login_image.png';
+import radargif from '../../assets/images/radar.gif';
 import drdologo from '../../assets/images/drdologo.png';
 import { MdPerson, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { Formik, Form } from "formik";
@@ -59,7 +60,17 @@ const LoginPage = (props) => {
   };
 
   return (
-    <div className="login-page">
+    <div
+      className="login-page"
+      style={{ position: "fixed", inset: 0, zIndex: 9999 }}
+    >
+      <div
+        className="login-bg"
+        style={{ backgroundImage: `url(${loginimage})` }}
+        aria-hidden="true"
+      ></div>
+      <div className="login-page-overlay" aria-hidden="true"></div>
+
       <header className="login-topbar">
         <img src={drdologo} alt="DRDO Logo" className="login-topbar-logo" />
         <div className="login-topbar-text">
@@ -69,24 +80,14 @@ const LoginPage = (props) => {
       </header>
 
       <main className="login-main">
-        {/* LEFT — instrument panel */}
-        <section className="login-visual">
-          <div className="radar-grid" aria-hidden="true"></div>
-          <div className="scan-line" aria-hidden="true"></div>
-          <div className="login-visual-content">
-            <img src={loginimage} alt="" className="login-visual-image" />
-          </div>
-          <div className="login-visual-caption">
-
-            <p>Real-time visibility into equipment, calibration, and inventory across DPSRR installations.</p>
-          </div>
-        </section>
-
-        {/* RIGHT — form panel */}
         <section className="login-form-panel">
           <div className="login-form-inner">
-            <h2 className="mb-3">Sign in</h2>
 
+            <div className="mb-3">
+              <img src={radargif} alt="Radar Animation" className="login-radar-gif w-25 h-25" />
+            </div>
+
+            <h2 className="mb-1">Sign in</h2>
 
             {message && (
               <div className="login-alert" role="alert">
@@ -96,9 +97,11 @@ const LoginPage = (props) => {
 
             <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleLoginSubmit}>
               {({ errors, touched, handleChange, values }) => (
-                <Form className="login-form">
+                <Form className="login-form text-start">
                   <div className="field-group">
-                    <label htmlFor="username">Username</label>
+                    <label htmlFor="username" className="form-label fs-6 fw-semi-bold">
+                      Username
+                    </label>
                     <div className="field-control">
                       <input
                         id="username"
@@ -117,7 +120,9 @@ const LoginPage = (props) => {
                   </div>
 
                   <div className="field-group">
-                    <label htmlFor="password">Password</label>
+                    <label htmlFor="password" className="form-label fs-6 fw-semi-bold">
+                      Password
+                    </label>
                     <div className="field-control">
                       <input
                         id="password"
@@ -154,7 +159,9 @@ const LoginPage = (props) => {
       </main>
 
       <footer className="login-footer">
-        <small>Website maintained by Vedant Tech Solutions</small>
+        <small>
+          Website maintained by Vedant Tech Solutions. Site best viewed at 1360 x 768 resolution in I.E 11+, Mozilla 120+, Google Chrome 120+
+        </small>
       </footer>
     </div>
   );

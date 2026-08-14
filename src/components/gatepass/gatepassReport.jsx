@@ -1,7 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
 import Navbar from "../navbar/navbar";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import Select from "react-select";
 import { format } from "date-fns";
 import { FaFilePdf, FaFileExcel, FaFilter, FaTimes, FaDownload } from "react-icons/fa";
@@ -24,23 +22,24 @@ const CATEGORY_OPTIONS = [
   { value: "NRMGP-C", label: "NRMGP-C" },
 ];
 
+const STATUS_OPTIONS = [
+  { value: "All", label: "All" },
+  { value: "O", label: "OUT" },
+  { value: "I", label: "IN" },
+  { value: "P", label: "Partially In" },
+];
 const STATUS_LABEL = { O: "OUT", I: "IN", P: "Partially In" };
 
 const fmtDate = (val) => (val ? format(new Date(val), "dd-MM-yyyy") : "-");
 
 const GatepassReport = () => {
-  // ── Default date range: last 30 days ──────────────────────────────────────
-  const defaultToDate = new Date();
-  const defaultFromDate = new Date();
-  defaultFromDate.setDate(defaultFromDate.getDate() - 30);
 
   const [rawData, setRawData] = useState([]);
   const [projectList, setProjectList] = useState([]);
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterProject, setFilterProject] = useState(null);   // { value, label }
-  const [filterFromDate, setFilterFromDate] = useState(defaultFromDate);
-  const [filterToDate, setFilterToDate] = useState(defaultToDate);
   const [isLoading, setIsLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("All");
   const { openAttachment, loading: attachmentLoading } = useGatepassAttachment();
 
   // ── Load data ──────────────────────────────────────────────────────────────
@@ -66,55 +65,61 @@ const GatepassReport = () => {
   // ── Filter logic ───────────────────────────────────────────────────────────
   const filteredData = useMemo(() => {
     return rawData.filter((item) => {
-      const itemDate = item.gatepassDate ? new Date(item.gatepassDate) : null;
 
-      // Normalize dates to midnight for clean comparison
-      const from = filterFromDate ? new Date(new Date(filterFromDate).setHours(0, 0, 0, 0)) : null;
-      const to = filterToDate ? new Date(new Date(filterToDate).setHours(23, 59, 59, 999)) : null;
+      const matchCategory =
+        filterCategory === "All" ||
+        item.category === filterCategory;
 
-      const matchCategory = filterCategory === "All" || item.category === filterCategory;
-      const matchProject = !filterProject || item.projectId === filterProject.value;
-      const matchFrom = !from || (itemDate && itemDate >= from);
-      const matchTo = !to || (itemDate && itemDate <= to);
+      const matchProject =
+        !filterProject ||
+        item.projectId === filterProject.value;
 
-      return matchCategory && matchProject && matchFrom && matchTo;
+      const matchStatus =
+        filterStatus === "All" ||
+        item.itemStatus === filterStatus;
+
+      return (
+        matchCategory &&
+        matchProject &&
+        matchStatus
+      );
     });
-  }, [rawData, filterCategory, filterProject, filterFromDate, filterToDate]);
+  }, [rawData, filterCategory, filterProject, filterStatus]);
 
   // ── Clear filters ──────────────────────────────────────────────────────────
   const clearFilters = () => {
     setFilterCategory("All");
     setFilterProject(null);
-    const to = new Date();
-    const from = new Date();
-    from.setDate(from.getDate() - 30);
-    setFilterFromDate(from);
-    setFilterToDate(to);
+    setFilterStatus("All");
   };
 
-  const isFiltered = (() => {
-    const defTo = new Date(); defTo.setHours(0, 0, 0, 0);
-    const defFrom = new Date(); defFrom.setDate(defFrom.getDate() - 30); defFrom.setHours(0, 0, 0, 0);
-    const curFrom = filterFromDate ? new Date(filterFromDate) : null; curFrom?.setHours(0, 0, 0, 0);
-    const curTo = filterToDate ? new Date(filterToDate) : null; curTo?.setHours(0, 0, 0, 0);
-    return (
-      filterCategory !== "All" ||
-      filterProject !== null ||
-      curFrom?.getTime() !== defFrom.getTime() ||
-      curTo?.getTime() !== defTo.getTime()
-    );
-  })();
+  const isFiltered = (
+    filterCategory !== "All" ||
+    filterProject !== null ||
+    filterStatus !== "All"
+  );
 
   // ── Shared report meta ─────────────────────────────────────────────────────
   const reportMeta = {
-    fromDate: filterFromDate ? format(filterFromDate, "dd-MM-yyyy") : "-",
-    toDate: filterToDate ? format(filterToDate, "dd-MM-yyyy") : "-",
-    category: filterCategory !== "All" ? filterCategory : "All Categories",
-    project: filterProject ? filterProject.label : "All Projects",
+    category:
+      filterCategory !== "All"
+        ? filterCategory
+        : "All Categories",
+
+    project:
+      filterProject
+        ? filterProject.label
+        : "All Projects",
+
+    status:
+      filterStatus === "All"
+        ? "All Status"
+        : STATUS_LABEL[filterStatus],
+
     generatedAt: format(new Date(), "dd-MM-yyyy HH:mm"),
+
     totalRecords: filteredData.length,
   };
-
   const tableColumns = ["SN", "Gatepass No", "Gatepass Date", "Category", "Project", "Destination", "Out Date", "Probable Return", "Item Status"];
 
   const reportDisplayColumns = [
@@ -160,8 +165,9 @@ const GatepassReport = () => {
     doc.setTextColor(80, 80, 80);
 
     // Split into two lines if project name is long to avoid overflow
-    const subLine1 = `Period: ${reportMeta.fromDate}  -  ${reportMeta.toDate}`;
-    const subLine2 = `Category: ${reportMeta.category}   |   Project: ${reportMeta.project}`;
+    const subLine1 = `Category: ${reportMeta.category}`;
+
+    const subLine2 = `Project: ${reportMeta.project}   |   Status: ${reportMeta.status}`;
     doc.text(subLine1, pageWidth / 2, 23, { align: "center" });
     doc.text(subLine2, pageWidth / 2, 28, { align: "center", maxWidth: usableWidth });
 
@@ -258,8 +264,8 @@ const GatepassReport = () => {
 
     const titleBlock = [
       ["Gatepass List"],
-      [`Period: ${reportMeta.fromDate} to ${reportMeta.toDate}`],
-      [`Category: ${reportMeta.category}     |     Project: ${reportMeta.project}`],
+      [`Category: ${reportMeta.category}`],
+      [`Project: ${reportMeta.project}     |     Status: ${reportMeta.status}`],
       [`Total Records: ${reportMeta.totalRecords}     |     Generated: ${reportMeta.generatedAt}`],
       [],
       tableColumns,
@@ -338,40 +344,39 @@ const GatepassReport = () => {
 
           {/* ══ FILTER BAR ══════════════════════════════════════════════════ */}
           <div className="mb-3 p-3 rounded" style={{ backgroundColor: "#f0f4ff", border: "1px solid #c7d4f0" }}>
-            <div className="row align-items-end g-3">
 
-              {/* Category pills */}
-              <div className="col-md-12">
+            {/* Category pills */}
+            <div className="d-flex flex-wrap gap-2 mb-3">
+              {CATEGORY_OPTIONS.map(cat => (
+                <label
+                  key={cat.value}
+                  className="d-flex align-items-center gap-1 px-3 py-1 rounded-pill"
+                  style={{
+                    cursor: "pointer",
+                    fontSize: "0.83rem",
+                    fontWeight: filterCategory === cat.value ? 600 : 400,
+                    border: `1.5px solid ${filterCategory === cat.value ? "#4f6ef7" : "#c7d4f0"}`,
+                    backgroundColor: filterCategory === cat.value ? "#4f6ef7" : "#fff",
+                    color: filterCategory === cat.value ? "#fff" : "#374151",
+                    transition: "all 0.15s ease",
+                    userSelect: "none",
+                  }}
+                >
+                  <input type="radio" name="rptCategory" value={cat.value}
+                    checked={filterCategory === cat.value}
+                    onChange={() => setFilterCategory(cat.value)}
+                    style={{ display: "none" }}
+                  />
+                  {cat.label}
+                </label>
+              ))}
+            </div>
 
-                <div className="d-flex flex-wrap gap-2">
-                  {CATEGORY_OPTIONS.map(cat => (
-                    <label
-                      key={cat.value}
-                      className="d-flex align-items-center gap-1 px-3 py-1 rounded-pill"
-                      style={{
-                        cursor: "pointer",
-                        fontSize: "0.83rem",
-                        fontWeight: filterCategory === cat.value ? 600 : 400,
-                        border: `1.5px solid ${filterCategory === cat.value ? "#4f6ef7" : "#c7d4f0"}`,
-                        backgroundColor: filterCategory === cat.value ? "#4f6ef7" : "#fff",
-                        color: filterCategory === cat.value ? "#fff" : "#374151",
-                        transition: "all 0.15s ease",
-                        userSelect: "none",
-                      }}
-                    >
-                      <input type="radio" name="rptCategory" value={cat.value}
-                        checked={filterCategory === cat.value}
-                        onChange={() => setFilterCategory(cat.value)}
-                        style={{ display: "none" }}
-                      />
-                      {cat.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
+            {/* Project dropdown + Item Status + Download buttons, all on one row */}
+            <div className="d-flex align-items-end flex-wrap gap-3">
 
               {/* Project dropdown */}
-              <div className="col-md-3 text-start" style={{ zIndex: 10, position: "relative" }}>
+              <div style={{ minWidth: "300px", zIndex: 10, position: "relative" }}>
                 <label className="form-label fw-semibold d-block mb-1" style={{ color: "#374151", fontSize: "0.85rem" }}>
                   Project
                 </label>
@@ -386,51 +391,41 @@ const GatepassReport = () => {
                 />
               </div>
 
-              {/* From Date */}
-              <div className="col-md-3 text-start">
+              {/* Item Status */}
+              {/* Item Status */}
+              <div className="flex-grow-1" style={{ minWidth: "260px" }}>
                 <label className="form-label fw-semibold d-block mb-1" style={{ color: "#374151", fontSize: "0.85rem" }}>
-                  From Date
+                  Item Status
                 </label>
-                <DatePicker
-                  selected={filterFromDate}
-                  onChange={date => {
-                    setFilterFromDate(date);
-                    if (date && filterToDate && date > filterToDate) setFilterToDate(date);
-                  }}
-                  className="form-control form-control-sm"
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="dd-MM-yyyy"
-                  showYearDropdown showMonthDropdown dropdownMode="select"
-                  maxDate={filterToDate || new Date()}
-                  onKeyDown={e => e.preventDefault()}
-                  isClearable={false}
-                />
+                <div className="d-flex flex-wrap gap-2 justify-content-center">
+                  <div className="d-flex flex-wrap gap-3">
+                    {STATUS_OPTIONS.map((status) => (
+                      <div className="form-check form-check-inline" key={status.value}>
+                        <input
+                          className="form-check-input"
+                          type="radio"
+                          name="status"
+                          id={`status-${status.value}`}
+                          value={status.value}
+                          checked={filterStatus === status.value}
+                          onChange={() => setFilterStatus(status.value)}
+                        />
+
+                        <label
+                          htmlFor={`status-${status.value}`}
+                        >
+                          {status.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* To Date */}
-              <div className="col-md-3 text-start">
-                <label className="form-label fw-semibold d-block mb-1" style={{ color: "#374151", fontSize: "0.85rem" }}>
-                  To Date
-                </label>
-                <DatePicker
-                  selected={filterToDate}
-                  onChange={date => {
-                    if (date && filterFromDate && date < filterFromDate) return;
-                    setFilterToDate(date);
-                  }}
-                  className="form-control form-control-sm"
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="dd-MM-yyyy"
-                  showYearDropdown showMonthDropdown dropdownMode="select"
-                  minDate={filterFromDate || undefined}
-                  maxDate={new Date()}
-                  onKeyDown={e => e.preventDefault()}
-                  isClearable={false}
-                />
-              </div>
-              <div className="col-md-3">
+              {/* Download buttons */}
+              <div className="d-flex gap-2">
                 <button
-                  className="btn btn-sm me-4"
+                  className="btn btn-sm"
                   onClick={downloadPDF}
                   disabled={filteredData.length === 0 || isLoading}
                   style={{
@@ -438,6 +433,7 @@ const GatepassReport = () => {
                     border: "none", fontWeight: 600, fontSize: "0.82rem",
                     borderRadius: "6px", padding: "5px 14px",
                     opacity: filteredData.length === 0 ? 0.5 : 1,
+                    whiteSpace: "nowrap",
                   }}
                 >
                   <FaFilePdf size={13} className="me-1" /> Download PDF
@@ -451,6 +447,7 @@ const GatepassReport = () => {
                     border: "none", fontWeight: 600, fontSize: "0.82rem",
                     borderRadius: "6px", padding: "5px 14px",
                     opacity: filteredData.length === 0 ? 0.5 : 1,
+                    whiteSpace: "nowrap",
                   }}
                 >
                   <FaFileExcel size={13} className="me-1" /> Download Excel
@@ -459,17 +456,15 @@ const GatepassReport = () => {
             </div>
 
             {/* Summary bar */}
-            <div className="mt-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div className="mt-2 d-flex align-items-center flex-wrap gap-2">
               <span style={{ fontSize: "0.78rem", color: "#4f6ef7", fontWeight: 500 }}>
                 {isLoading ? "Loading…" : `${filteredData.length} record(s) found`}
                 {filterCategory !== "All" && <> · <strong>{filterCategory}</strong></>}
                 {filterProject && <> · <strong>{filterProject.label}</strong></>}
-                {filterFromDate && <> · From <strong>{format(filterFromDate, "dd-MM-yyyy")}</strong></>}
-                {filterToDate && <> · To <strong>{format(filterToDate, "dd-MM-yyyy")}</strong></>}
+                {filterStatus !== "All" && (
+                  <> · <strong>{STATUS_LABEL[filterStatus]}</strong></>
+                )}
               </span>
-
-              {/* Download buttons */}
-
             </div>
           </div>
 
@@ -492,7 +487,7 @@ const GatepassReport = () => {
                     return (
                       <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#fff" : "#f0f4ff" }}>
                         {row.map((cell, j) => (
-                          <td key={j} className={ j === 5 ? "text-start" : ""}>{cell}</td>
+                          <td key={j} className={j === 5 ? "text-start" : ""}>{cell}</td>
                         ))}
 
                         {/* Document column — view-only in table, not in PDF/Excel */}

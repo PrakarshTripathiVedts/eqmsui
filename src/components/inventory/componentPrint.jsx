@@ -1,0 +1,151 @@
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "../../../src/assets/fonts/vfs_fonts";
+
+pdfMake.vfs = pdfFonts.vfs;
+
+pdfMake.fonts = {
+    Arial: {
+        normal: "arial.ttf",
+        bold: "arialbd.ttf",
+        italics: "ariali.ttf",
+        bolditalics: "arialbi.ttf"
+    }
+};
+
+function formatDate(date) {
+    if (!date) return "-";
+
+    const parts = date.split("-");
+    if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+
+    return date;
+}
+
+export const generateComponentPdf = (data) => {
+    const docDefinition = {
+        pageSize: "A4",
+        pageMargins: [40, 50, 40, 50],
+
+        // Draws a rounded border on every page
+        background(currentPage, pageSize) {
+            return {
+                svg: `
+  <svg width="${pageSize.width}" height="${pageSize.height}">
+    <rect
+      x="10"
+      y="10"
+      width="${pageSize.width - 20}"
+      height="${pageSize.height - 20}"
+      rx="12"
+      ry="12"
+      fill="none"
+      stroke="#000000"
+      stroke-width="1"
+    />
+  </svg>
+`
+            };
+        },
+
+        content: [
+            {
+                text: "COMPONENT DETAILS",
+                style: "header",
+                alignment: "center",
+                margin: [0, 0, 0, 10],
+            },
+            {
+                text: "Name: " + (data.componentName || "-"),
+                style: "subHeader",
+                alignment: "center",
+                margin: [0, 0, 0, 20],
+            },
+            {
+                table: {
+                    widths: ["35%", "*"],
+                    body: [
+                        [
+                            { text: "Component Type", bold: true },
+                            data.componentType || "-",
+                        ],
+                        [
+                            { text: "Component Specs", bold: true },
+                            data.componentSpecs || "-",
+                        ],
+                        [
+                            { text: "Unit", bold: true },
+                            data.unitCode || "-",
+                        ],
+                        [
+                            { text: "Opening Balance Qty", bold: true },
+                            data.openingBalQty || "-",
+                        ],
+                        [
+                            { text: "Balance Qty Date", bold: true },
+                            formatDate(data.balQtyDate),
+                        ],
+
+                        [
+                            { text: "Room No", bold: true },
+                            data.roomNo || "-",
+                        ],
+                        [
+                            { text: "Almirah No", bold: true },
+                            data.almirahNo || "-",
+                        ],
+                        [
+                            { text: "Box No", bold: true },
+                            data.boxNo || "-",
+                        ],
+                        [
+                            { text: "Latest Balance Qty", bold: true },
+                            data.latestBalQty || "-",
+                        ],
+                        [
+                            { text: "Latest Qty Date", bold: true },
+                            formatDate(data.latestBalQtyDate),
+                        ],
+                        [
+                            { text: "Remarks", bold: true },
+                            data.remarks || "-",
+                        ],
+
+                    ],
+                },
+                layout: {
+                    paddingTop: function () { return 8; },
+                    paddingBottom: function () { return 8; },
+                    paddingLeft: function () { return 6; },
+                    paddingRight: function () { return 6; },
+                    hLineWidth: function () { return 0.5; },
+                    vLineWidth: function () { return 0; },
+                    hLineColor: function () { return "#dddddd"; },
+                    fillColor: function (rowIndex, node, columnIndex) {
+                        return columnIndex === 0 ? "#E8EAF6" : null;
+                    },
+                },
+            },
+        ],
+
+        styles: {
+            header: {
+                fontSize: 18,
+                bold: true,
+            },
+            subHeader: {
+                fontSize: 14,
+                bold: true,
+                margin: [0, 10, 0, 8],
+            },
+        },
+
+        defaultStyle: {
+            fontSize: 10,
+            font: "Arial",
+        },
+    };
+
+    pdfMake.createPdf(docDefinition).open();
+};
