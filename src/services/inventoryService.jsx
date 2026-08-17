@@ -1,8 +1,29 @@
 import axios from 'axios';
 import config from "../environment/config";
 import { authHeader } from './auth.header';
+import Swal from 'sweetalert2';
 
 const API_URL = config.API_URL;
+
+export const showPdfOpeningLoading = (title = "Generating...") => {
+    Swal.fire({
+        title: title,
+        html: `
+            <div class="loader"></div>
+            <p>Please wait while we process your request.</p>
+        `,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        didOpen: () => {
+            const popup = Swal.getPopup();
+            popup.style.zIndex = "999999";
+
+            const container = Swal.getContainer();
+            container.style.zIndex = "999999";
+        },
+        // timer:4000,
+    });
+}
 
 export const syncSSRItemsToLocal = async (divisionId) => {
     try {
@@ -184,3 +205,87 @@ export const getStockVerificationData = async (rateCosting, ledgerId) => {
         throw error;
     }
 };
+
+
+export const downloadSSRItems = async (payLoad) => {
+    try {
+        showPdfOpeningLoading();
+        const res = await axios.get(`${API_URL}api/reports/ssr-items-pdf`, {
+            params: payLoad,
+            responseType: "blob",
+            headers: {
+                ...authHeader(),
+            }
+        })
+        const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+        Swal.close();
+        window.open(url);
+    } catch (error) {
+        console.error("Error fetching the downloadSSRItems Report Details ", error);
+        Swal.close();
+        throw error;
+    }
+}
+
+
+export const downloadImortProjectWiseItems = async (payLoad) => {
+    try {
+        showPdfOpeningLoading();
+        const res = await axios.get(`${API_URL}api/reports/project-wise-items-pdf`, {
+            params: payLoad,
+            responseType: "blob",
+            headers: {
+                ...authHeader(),
+            }
+        })
+        const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+        Swal.close();
+        window.open(url);
+    } catch (error) {
+        console.error("Error fetching the downloadSSRItems Report Details ", error);
+        Swal.close();
+        throw error;
+    }
+}
+
+
+export const downloadStockVerificationReport = async (payLoad) => {
+    try {
+        showPdfOpeningLoading();
+        const res = await axios.get(`${API_URL}api/reports/stock-verification-report-pdf`, {
+            params: payLoad,
+            responseType: "blob",
+            headers: {
+                ...authHeader(),
+            }
+        })
+        const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+        Swal.close();
+        window.open(url);
+    } catch (error) {
+        console.error("Error fetching the downloadSSRItems Report Details ", error);
+        Swal.close();
+        throw error;
+    }
+}
+
+
+export const downloadCondemnationReport = async (payLoad) => {
+    try {
+        showPdfOpeningLoading();
+        const res = await axios.get(`${API_URL}api/reports/condemnation-report-pdf`, {
+            params: payLoad,
+            responseType: "blob",
+            headers: {
+                ...authHeader(),
+            }
+        })
+        const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+        Swal.close();
+        window.open(url);
+    } catch (error) {
+        console.error("Error fetching the downloadSSRItems Report Details ", error);
+        Swal.close();
+        throw error;
+    }
+}

@@ -4,7 +4,7 @@ import Datatable from "../datatable/datatable";
 import { useState, useEffect } from "react";
 import { FaEdit, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import { TbLabelImportantFilled } from "react-icons/tb";
-import { getLocalPwSSRItems, importPwSSRItemToMain, getImportedPwSSRItemsByDivision, deletePwSSRItemfromSatge, syncPwSSRItemsToLocal, getDivisionBasedLedger, getImportedUniqueLedgers } from "../../services/inventoryService";
+import { getLocalPwSSRItems, importPwSSRItemToMain, getImportedPwSSRItemsByDivision, deletePwSSRItemfromSatge, syncPwSSRItemsToLocal, getDivisionBasedLedger, getImportedUniqueLedgers, downloadProjectWiseItems, downloadImortProjectWiseItems } from "../../services/inventoryService";
 import { format, parseISO } from "date-fns";
 import SsrItemsImportModal from "./ssrItemsImportModal ";
 import { Tooltip } from "react-tooltip";
@@ -428,22 +428,34 @@ const ProjectItems = () => {
     };
 
 
-    const handlePdfExport = () => {
-        generatePdfForListPage({
-            title: "Imported Project Wise Report",
-            columns: columnsCopy,
-            data: importedItemList,
-            fileName: "Imported_Project_Wise_Report",
-            orientation: "landscape",
+    // const handlePdfExport = () => {
+    //     generatePdfForListPage({
+    //         title: "Imported Project Wise Report",
+    //         columns: columnsCopy,
+    //         data: importedItemList,
+    //         fileName: "Imported_Project_Wise_Report",
+    //         orientation: "landscape",
 
-            details: {
-                "Project": importedLedgerOptions.find(
-                    opt => opt.value === Number(ledgerId)
-                )?.label || "-",
-                "Page Type": pageTypeOptions.find(opt => opt.value === pageType)?.label || "-",
+    //         details: {
+    //             "Project": importedLedgerOptions.find(
+    //                 opt => opt.value === Number(ledgerId)
+    //             )?.label || "-",
+    //             "Page Type": pageTypeOptions.find(opt => opt.value === pageType)?.label || "-",
+    //         }
+    //     });
+    // };
+
+     const handlePdfExport = async () => {
+            console.log("handle pdf export")
+            const payLoad = {
+              ledgerId : ledgerId,
+               Project : importedLedgerOptions.find(opt => opt.value === Number(ledgerId))?.label || "-",
+               pageType : pageType,
+               pageTypeName : pageTypeOptions.find(opt => opt.value === pageType)?.label || "-"
             }
-        });
-    };
+            console.log("payload****",payLoad)
+            await downloadImortProjectWiseItems(payLoad);
+        }
 
     const handleExcelExport = () => {
         generateExcelForListPage({

@@ -3,7 +3,7 @@ import Navbar from "../navbar/navbar";
 import { getFormDetailsList } from "../../services/admin.service";
 import { Link } from "react-router-dom";
 import Datatable from "../datatable/datatable";
-import { getImportedUniqueLedgers, getStockVerificationData } from "../../services/inventoryService";
+import { downloadStockVerificationReport, getImportedUniqueLedgers, getStockVerificationData } from "../../services/inventoryService";
 import { format, parseISO } from "date-fns";
 import Select from "react-select";
 import { generatePdfForListPage } from "../print/generatePdfForListPage";
@@ -141,21 +141,36 @@ const StockVerification = () => {
         ? [...baseColumns, { name: "Action", selector: (row) => row.action, align: 'text-center' }]
         : baseColumns;
 
-    const handlePdfExport = () => {
-        generatePdfForListPage({
-            title: "Stock Verification Report",
-            columns: baseColumns,
-            data: stcokData,
-            fileName: "Stock_Verification_Report",
-            orientation: "landscape",
+    // const handlePdfExport = () => {
+    //     generatePdfForListPage({
+    //         title: "Stock Verification Report",
+    //         columns: baseColumns,
+    //         data: stcokData,
+    //         fileName: "Stock_Verification_Report",
+    //         orientation: "landscape",
 
-            details: {
-                "Rate Above (Rs.)": rateCosting,
-                "Budget": importedLedgerOptions.find(opt => opt.value === Number(ledgerId))?.label || "SSR",
+    //         details: {
+    //             "Rate Above (Rs.)": rateCosting,
+    //             "Budget": importedLedgerOptions.find(opt => opt.value === Number(ledgerId))?.label || "SSR",
+    //         }
+    //     });
+    // };
+
+    
+      const handlePdfExport = async () => {
+                console.log("handle pdf export")
+                const payLoad = {
+                  ledgerId : ledgerId,
+                   Project : importedLedgerOptions.find(opt => opt.value === Number(ledgerId))?.label || "-",
+                   rateCosting : rateCosting,
+                   
+                }
+                console.log("payload****",payLoad)
+                await downloadStockVerificationReport(payLoad);
             }
-        });
-    };
-
+    
+    
+    
     const handleExcelExport = () => {
         generateExcelForListPage({
             title: "Stock Verification Report",
